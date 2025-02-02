@@ -1,0 +1,20 @@
+[tool.poetry]
+name = "backend"
+version = "0.1.0"
+description = ""
+authors = ["alexedw01 <alexedw01@icloud.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.13"
+flask = "^3.1.0"
+flask-cors = "^5.0.0"
+requests = "^2.32.3"
+psycopg2 = "^2.9.10"
+sqlalchemy = "^2.0.37"
+cloud-sql-python-connector = "^1.16.0"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
