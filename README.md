@@ -11,7 +11,9 @@ touch .env
 
 ```
 
-in `.env` add the variables below. follow [google_cloud_sql_tutorial]https://www.geeksforgeeks.org/setting-up-google-cloud-sql-with-flask/ to set up the `.env`. Talk to Alex if you are having issues
+in `.env` add the variables below. follow [google_cloud_sql_tutorial]https://www.geeksforgeeks.org/setting-up-google-cloud-sql-with-flask/ to set up the `.env`. Talk to Alex if you are having issues.
+
+**DISABLE BILLING ON GOOGLE CLOUD SQL INSTANCE WHEN NOT USING YOU WILL INCUR COSTS!!!**
 
 ```sh
 PASSWORD =""
