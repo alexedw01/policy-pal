@@ -48,7 +48,10 @@ poetry run flask run
 ```
 
 ### Frontend
-`TODO`
+```sh
+cd frontend
+npm start
+```
 
 ### Database (Google Cloud SQL)
 - Ensure PostgreSQL instance is created and update the connection in the backend
