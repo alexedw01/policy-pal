@@ -1,6 +1,3 @@
-
-# Hold on pushing .gitignore not added yet. need if for private key protection
-
 ## Installation & Setup
 
 ### Backend
