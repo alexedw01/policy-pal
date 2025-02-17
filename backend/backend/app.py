@@ -106,5 +106,15 @@ def login():
     else:
         return jsonify({"error": "Invalid credentials"}), 401
 
+# run poetry run flask reset-db
+@app.cli.command("reset-db")
+@with_appcontext
+def reset_db():
+    """Drops and recreates all database tables."""
+    db.drop_all()
+    db.create_all()
+    db.session.commit()
+    click.echo("Database reset complete.")
+
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)

@@ -44,6 +44,12 @@ cd backend/backend
 poetry run flask run
 ```
 
+#### Backend Testing
+```sh
+cd backend/backend
+poetry run pytest
+```
+
 ### Frontend
 ```sh
 cd frontend
