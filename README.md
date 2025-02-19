@@ -50,6 +50,25 @@ poetry run flask run
 ### Frontend
 `TODO`
 
+### Search
+1\. Run the backend:
+```sh
+cd frontend/src
+node searchserver.js
+```
+
+2\. In project directory, run:
+
+```sh
+npm install
+```
+to install all dependencies needed for project.
+
+```sh
+npm start
+```
+to run app in development mode. (View in browser at http://localhost:3000)
+
 ### Database (Google Cloud SQL)
 - Ensure PostgreSQL instance is created and update the connection in the backend
 
