@@ -1,5 +1,6 @@
 "use client";
 import React, { useState, useEffect } from "react";
+import ReactMarkdown from "react-markdown";
 
 const BillSummary = () => {
   const [summary, setSummary] = useState("");
@@ -30,7 +31,7 @@ const BillSummary = () => {
       ) : error ? (
         <p className="text-red-500">Error: {error}</p>
       ) : (
-        <pre className="whitespace-pre-wrap">{summary}</pre>
+        <ReactMarkdown className="my-markdown">{summary}</ReactMarkdown>
       )}
     </div>
   );
