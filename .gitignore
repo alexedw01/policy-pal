@@ -1,5 +1,5 @@
 # Ignore environment variables and sensitive files
-.env
+.env.local
 *.pem
 *.key
 *.crt
