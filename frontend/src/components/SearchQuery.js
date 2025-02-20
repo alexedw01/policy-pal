@@ -56,17 +56,45 @@ const SearchQuery = () => {
         const parser = new DOMParser();
         const doc = parser.parseFromString(scrapedContent, 'text/html');
         const expandedItems = Array.from(doc.querySelectorAll("ol.basic-search-results-lists li.expanded"))
-        .map(li => {
-            // TODO: improve sorting of individual result elements to handle different kinds of results
-            const result = {
-                title: li.querySelector(".result-heading a") ? li.querySelector(".result-heading a").textContent.trim() : '',
-                link: li.querySelector(".result-heading a") ? li.querySelector(".result-heading a").href : '',
-                sponsor: li.querySelector(".result-item strong + a") ? li.querySelector(".result-item strong + a").textContent.trim() : '',
-                committees: li.querySelector(".result-item strong + span") ? li.querySelector(".result-item strong + span").textContent.trim() : '',
-                latestAction: li.querySelector(".result-item span strong + a") ? li.querySelector(".result-item span strong + a").textContent.trim() : ''
-            };
-            return result;
-        });
+            .map(li => {
+                const visualIndicator = 
+                    li.querySelector(".visualIndicator") ? 
+                    li.querySelector(".visualIndicator").textContent.trim() : '';
+
+                // Filter only the relevant types
+                const allowedTypes = ["RESOLUTION", "CONCURRENT RESOLUTION", "LAW", "BILL"];
+                if (!allowedTypes.includes(visualIndicator.toUpperCase())) return null;
+
+                // Trickier element filtration
+                const sponsorElement = Array.from(li.querySelectorAll(".result-item strong"))
+                    .find(el => el.textContent.includes("Sponsor:"));
+                const committeesElement = Array.from(li.querySelectorAll(".result-item strong"))
+                    .find(el => el.textContent.includes("Committees:"));
+                const latestActionElement = Array.from(li.querySelectorAll(".result-item strong"))
+                    .find(el => el.textContent.includes("Latest Action:"));
+
+                // Extract latestAction text, remove trailing phrases that appear
+                let latestAction = latestActionElement 
+                    ? latestActionElement.parentNode.textContent.replace("Latest Action:", "").trim()
+                    : '';
+                latestAction = latestAction.replace(/\s*\(.*?\)$/g, '').trim();
+
+                return {
+                    title: li.querySelector(".result-heading a")?.textContent.trim() || '',
+                    link: li.querySelector(".result-heading a") 
+                        ? "https://www.congress.gov"
+                            + li.querySelector(".result-heading a").getAttribute("href")
+                        : '',
+                    sponsor: sponsorElement 
+                        ? sponsorElement.nextElementSibling?.textContent.trim() 
+                        : '',
+                    committees: committeesElement 
+                        ? committeesElement.parentNode.textContent.replace("Committees:", "").trim() 
+                        : '',
+                    latestAction: latestAction
+                };
+            })
+            .filter(item => item !== null);
 
         console.log(expandedItems);
         
