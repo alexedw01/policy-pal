@@ -1,29 +1,38 @@
-# Ignore environment variables and sensitive files
-.env.local
-*.pem
-*.key
-*.crt
+# Environment variables
+**/.env
+**/.env.local
+**/.env.development.local
+**/.env.test.local
+**/.env.production.local
+.env
+# Backend
+policy-pal-backend/__pycache__/
+policy-pal-backend/policy_pal/__pycache__/
+policy-pal-backend/*.pyc
+policy-pal-backend/*.pyo
+policy-pal-backend/*.pyd
+policy-pal-backend/.pytest_cache/
+policy-pal-backend/venv/
+policy-pal-backend/.venv/
 
-# Ignore Python virtual environments
-venv/
-__pycache__/
-*.pyc
-*.pyo
-*.pyd
+# Frontend
+frontend/policypal/.next/
+frontend/policypal/node_modules/
+frontend/policypal/.turbo
+frontend/policypal/out/
+frontend/policypal/build/
+frontend/policypal/dist/
+frontend/policypal/coverage/
 
-# Ignore Poetry-related files
-poetry.lock
+# Logs
+frontend/policypal/npm-debug.log*
+frontend/policypal/yarn-debug.log*
+frontend/policypal/yarn-error.log*
 
-# Ignore VSCode settings
+# Editor directories and files
+.idea/
 .vscode/
-
-# Ignore database files and logs
-*.sqlite3
-*.log
-instance/
-
-# Ignore compiled files
-*.so
-*.o
-*.out
+*.swp
+*.swo
 .DS_Store
+*/.DS_Store
