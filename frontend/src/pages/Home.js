@@ -1,6 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import "./Home.css"; // Import CSS for styling
+import "./Home.css"; // for styling
 
 const Home = () => {
   return (
@@ -8,9 +8,10 @@ const Home = () => {
       {/* Navbar */}
       <nav className="navbar">
         <h1 className="logo">PolicyPal</h1>
-        <Link to="/signup" className="signup-button">
-          Sign Up
-        </Link>
+        <div className="nav-buttons">
+          <Link to="/login" className="login-button">Login</Link>
+          <Link to="/signup" className="signup-button">Sign Up</Link>
+        </div>
       </nav>
 
       {/* Main Content */}

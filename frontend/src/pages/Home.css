@@ -13,19 +13,41 @@
     color: white;
   }
   
+  /* Logo */
   .logo {
     font-size: 24px;
     font-weight: bold;
   }
   
-  /* Sign Up Button */
-  .signup-button {
+  /* Button Container */
+  .nav-buttons {
+    display: flex;
+    gap: 10px;
+  }
+  
+  /* Login & Sign Up Buttons */
+  .login-button, .signup-button {
     text-decoration: none;
-    background-color: #61dafb;
-    color: black;
     padding: 10px 15px;
     border-radius: 5px;
     font-weight: bold;
+  }
+  
+  /* Login Button */
+  .login-button {
+    background-color: #ffa726;
+    color: black;
+  }
+  
+  /* Sign Up Button */
+  .signup-button {
+    background-color: #61dafb;
+    color: black;
+  }
+  
+  /* Button Hover Effects */
+  .login-button:hover {
+    background-color: #fb8c00;
   }
   
   .signup-button:hover {
