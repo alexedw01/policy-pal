@@ -8,13 +8,22 @@ const SignUp = () => {
     password: "",
   });
 
+  const isValidUsername = /^[^\s]+$/.test(formData.username); // No spaces allowed
+  const isFormValid =
+    isValidUsername &&
+    formData.email.trim() !== "" &&
+    formData.password.trim() !== "";
+
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    console.log("Sign Up Data:", formData);
+    if (isFormValid) {
+      console.log("Sign Up Data:", formData);
+      alert("Sign-up form filled out correctly!");
+    }
   };
 
   return (
@@ -24,12 +33,15 @@ const SignUp = () => {
         <input 
           type="text" 
           name="username" 
-          placeholder="Username" 
+          placeholder="Username (no spaces)" 
           value={formData.username} 
           onChange={handleChange} 
           required 
           style={{ display: "block", margin: "10px 0", padding: "8px", width: "200px" }}
         />
+        {!isValidUsername && formData.username && (
+          <p style={{ color: "red", fontSize: "12px" }}>Username cannot contain spaces</p>
+        )}
         <input 
           type="email" 
           name="email" 
@@ -48,7 +60,11 @@ const SignUp = () => {
           required 
           style={{ display: "block", margin: "10px 0", padding: "8px", width: "200px" }}
         />
-        <button type="submit" style={{ marginTop: "10px", padding: "10px 20px", backgroundColor: "#61dafb", border: "none", borderRadius: "5px", fontWeight: "bold" }}>
+        <button 
+          type="submit" 
+          disabled={!isFormValid} 
+          style={{ marginTop: "10px", padding: "10px 20px", backgroundColor: isFormValid ? "#61dafb" : "#ccc", border: "none", borderRadius: "5px", fontWeight: "bold", cursor: isFormValid ? "pointer" : "not-allowed" }}
+        >
           Sign Up
         </button>
       </form>

@@ -7,13 +7,19 @@ const Login = () => {
     password: "",
   });
 
+  const isValidUsername = /^[^\s]+$/.test(formData.username); // No spaces allowed
+  const isFormValid = isValidUsername && formData.password.trim() !== "";
+
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    console.log("Login Data:", formData);
+    if (isFormValid) {
+      console.log("Login Data:", formData);
+      alert("Login form filled out correctly!");
+    }
   };
 
   return (
@@ -23,12 +29,15 @@ const Login = () => {
         <input 
           type="text" 
           name="username" 
-          placeholder="Username" 
+          placeholder="Username (no spaces)" 
           value={formData.username} 
           onChange={handleChange} 
           required 
           style={{ display: "block", margin: "10px 0", padding: "8px", width: "200px" }}
         />
+        {!isValidUsername && formData.username && (
+          <p style={{ color: "red", fontSize: "12px" }}>Username cannot contain spaces</p>
+        )}
         <input 
           type="password" 
           name="password" 
@@ -38,7 +47,11 @@ const Login = () => {
           required 
           style={{ display: "block", margin: "10px 0", padding: "8px", width: "200px" }}
         />
-        <button type="submit" style={{ marginTop: "10px", padding: "10px 20px", backgroundColor: "#ffa726", border: "none", borderRadius: "5px", fontWeight: "bold" }}>
+        <button 
+          type="submit" 
+          disabled={!isFormValid} 
+          style={{ marginTop: "10px", padding: "10px 20px", backgroundColor: isFormValid ? "#ffa726" : "#ccc", border: "none", borderRadius: "5px", fontWeight: "bold", cursor: isFormValid ? "pointer" : "not-allowed" }}
+        >
           Login
         </button>
       </form>
