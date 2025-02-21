@@ -10,13 +10,13 @@ const SearchResults = () => {
         <div>
             <h1>Search Results</h1>
             <div id="results-container">
-                {results ? (
-                    results.map((result, index) => (
+                {results && results.length > 0 ? (
+                    results.slice(0, 5).map((result, index) => (
                         <div key={index} className="result-item">
-                            <h3><a href={result.link}>{result.title}</a></h3>
-                            <p><strong>Sponsor:</strong> {result.sponsor}</p>
-                            <p><strong>Committees:</strong> {result.committees}</p>
-                            <p><strong>Latest Action:</strong> {result.latestAction}</p>
+                            <h3 align="left"><a href={result.link}>{result.title}</a></h3>
+                            <p align="left"><strong>Sponsor:</strong> {result.sponsor}</p>
+                            <p align="left"><strong>Committees:</strong> {result.committees}</p>
+                            <p align="left"><strong>Latest Action:</strong> {result.latestAction}</p>
                         </div>
                     ))
                 ) : (
