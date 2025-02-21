@@ -1,4 +1,5 @@
 import './App.css';
+import logo from './logo.svg';
 import Header from './components/Header';
 import SearchQuery from './components/SearchQuery';
 import SearchResults from './components/SearchResults';

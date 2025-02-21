@@ -1,6 +1,3 @@
-
-# Hold on pushing .gitignore not added yet. need if for private key protection
-
 ## Installation & Setup
 
 ### Backend
@@ -47,8 +44,17 @@ cd backend/backend
 poetry run flask run
 ```
 
+#### Backend Testing
+```sh
+cd backend/backend
+poetry run pytest
+```
+
 ### Frontend
-`TODO`
+```sh
+cd frontend
+npm start
+```
 
 ### Search
 1\. Run the backend:
