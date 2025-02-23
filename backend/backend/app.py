@@ -623,7 +623,7 @@ def login():
     Returns an access token and user details if credentials are valid.
     """
     data = request.get_json()
-    username_or_email = data.get("username_or_email")
+    username_or_email = data.get("email")
     password = data.get("password")
 
     if not username_or_email or not password:
