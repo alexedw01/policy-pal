@@ -562,7 +562,7 @@ def reset_db() -> None:
 # ------------------------------------------------------------------------------
 # User API Endpoints
 # ------------------------------------------------------------------------------
-@app.route("/register", methods=["POST"])
+@app.route("/api/auth/register", methods=["POST"])
 def register():
     """
     API endpoint to register a new user.
@@ -589,7 +589,7 @@ def register():
 
     return jsonify({"message": "User created successfully"}), 201
 
-@app.route("/users", methods=["GET"])
+@app.route("/api/auth/users", methods=["GET"])
 def get_users():
     """
     API endpoint to retrieve all registered users.
@@ -601,7 +601,7 @@ def get_users():
     users_list = [{"id": user.id, "email": user.email, "username": user.username} for user in users]
     return jsonify(users_list), 200
 
-@app.route("/login", methods=["POST"])
+@app.route("/api/auth/login", methods=["POST"])
 def login():
     """
     API endpoint for user login.
@@ -642,7 +642,7 @@ def serialize_bill(bill):
         dict: A dictionary representation of the bill.
     """
     return {
-        "id": bill.id,
+        "_id": str(bill.id),
         "congress": bill.congress,
         "bill_type": bill.bill_type,
         "bill_number": bill.bill_number,
@@ -665,7 +665,7 @@ def serialize_bill(bill):
 # Bill API Endpoints
 # ------------------------------------------------------------------------------
 # more for manual testing purposes
-@app.route("/bills-minimal", methods=["GET"])
+@app.route("/api/bills-minimal", methods=["GET"])
 def get_minimal_bills():
     """
     API endpoint to retrieve a simple list of bills.
@@ -688,7 +688,7 @@ def get_minimal_bills():
     return jsonify(minimal_bills), 200
 
 
-@app.route("/bills", methods=["GET"])
+@app.route("/api/bills", methods=["GET"])
 def get_bills():
     """
     API endpoint to retrieve bills with pagination, sorting, and optional filtering by chamber.
@@ -734,7 +734,7 @@ def get_bills():
         return jsonify({"error": str(e)}), 500
 
 
-@app.route("/bills/trending", methods=["GET"])
+@app.route("/api/bills/trending", methods=["GET"])
 def get_trending_bills():
     """
     API endpoint to retrieve the top 10 trending bills sorted by upvote count in descending order.
@@ -750,19 +750,19 @@ def get_trending_bills():
         return jsonify({"error": str(e)}), 500
 
 
-@app.route("/bills/<string:bill_number>/full", methods=["GET"])
-def get_full_bill(bill_number):
+@app.route("/api/bills/<int:bill_id>/full", methods=["GET"])
+def get_full_bill(bill_id):
     """
-    API endpoint to retrieve full details for a specific bill by its bill_number.
+    API endpoint to retrieve full details for a specific bill by its id.
 
     Args:
-        bill_number (str): The unique bill number of the bill.
+        bill_id (int): The unique id of the bill.
 
     Returns:
         JSON response containing the serialized bill details or a 404 error if not found.
     """
     try:
-        bill = Bill.query.filter_by(bill_number=bill_number).first()
+        bill = Bill.query.get(bill_id)
         if not bill:
             return jsonify({"error": "Bill not found"}), 404
 
@@ -776,7 +776,8 @@ def get_full_bill(bill_number):
 
 
 
-@app.route("/search", methods=["GET"])
+
+@app.route("/api/search", methods=["GET"])
 def search_bills():
     """
     API endpoint to search bills based on a keyword.
