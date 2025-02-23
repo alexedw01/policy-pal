@@ -22,6 +22,7 @@ from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import or_
 from flask_cors import CORS
 from flask.cli import with_appcontext
+from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity
 
 from dotenv import load_dotenv
 from apscheduler.schedulers.background import BackgroundScheduler
@@ -53,6 +54,9 @@ app.config["SQLALCHEMY_DATABASE_URI"] = (
 )
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 db = SQLAlchemy(app)
+
+app.config["JWT_SECRET_KEY"] = os.getenv("JWT_SECRET_KEY")
+jwt = JWTManager(app)
 
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
@@ -562,14 +566,14 @@ def reset_db() -> None:
 # ------------------------------------------------------------------------------
 # User API Endpoints
 # ------------------------------------------------------------------------------
+
 @app.route("/api/auth/register", methods=["POST"])
 def register():
     """
-    API endpoint to register a new user.
+    API endpoint to register a new user and automatically log them in.
 
     Expects a JSON payload with 'email', 'username', and 'password'.
-    Returns a success message upon user creation or an error message if fields are missing
-    or the user already exists.
+    Returns an access token along with a success message and user details upon user creation.
     """
     data = request.get_json()
     email = data.get("email")
@@ -587,7 +591,16 @@ def register():
     db.session.add(user)
     db.session.commit()
 
-    return jsonify({"message": "User created successfully"}), 201
+    access_token = create_access_token(identity=user.id, expires_delta=timedelta(hours=1))
+    return jsonify({
+        "message": "User created successfully",
+        "access_token": access_token,
+        "user": {
+            "id": user.id,
+            "email": user.email,
+            "username": user.username
+        }
+    }), 201
 
 @app.route("/api/auth/users", methods=["GET"])
 def get_users():
@@ -607,7 +620,7 @@ def login():
     API endpoint for user login.
 
     Expects a JSON payload with 'username_or_email' and 'password'.
-    Returns a success message if credentials are valid, or an error message otherwise.
+    Returns an access token and user details if credentials are valid.
     """
     data = request.get_json()
     username_or_email = data.get("username_or_email")
@@ -621,9 +634,19 @@ def login():
     ).first()
 
     if user and user.check_password(password):
-        return jsonify({"message": "Logged in successfully"}), 200
+        access_token = create_access_token(identity=user.id, expires_delta=timedelta(hours=1))
+        return jsonify({
+            "message": "Logged in successfully",
+            "access_token": access_token,
+            "user": {
+                "id": user.id,
+                "email": user.email,
+                "username": user.username
+            }
+        }), 200
     else:
         return jsonify({"error": "Invalid credentials"}), 401
+
 
 # ------------------------------------------------------------------------------
 # Helper Function for Serialization
@@ -807,4 +830,4 @@ def search_bills():
         return jsonify({"error": str(e)}), 500
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000)
+    app.run(host="0.0.0.0", port=8080)

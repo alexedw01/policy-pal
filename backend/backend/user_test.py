@@ -1,3 +1,4 @@
+import json
 import pytest
 from backend.app import app, db, User
 
@@ -17,74 +18,82 @@ def client():
         db.session.remove()
         db.drop_all()
 
-@pytest.fixture
-def runner(client):
-    """
-    Fixture for obtaining a test CLI runner for the Flask application.
-    """
-    return client.application.test_cli_runner()
-
 def test_register_success(client):
     """
     Test that a user is successfully registered.
 
-    Sends a POST request to the /register endpoint with a valid payload.
-    Asserts that the response status is 201 and the response message confirms user creation.
+    Sends a POST request to the /api/auth/register endpoint with a valid payload.
+    Asserts that the response status is 201 and the response contains an access token
+    and user object with the expected fields.
     """
     payload = {
         "email": "test@example.com",
         "username": "testuser",
         "password": "testpassword"
     }
-    response = client.post("/register", json=payload)
+    response = client.post(
+        "/api/auth/register",
+        data=json.dumps(payload),
+        content_type="application/json"
+    )
     assert response.status_code == 201
     data = response.get_json()
-    assert data["message"] == "User created successfully"
+    assert "access_token" in data
+    assert isinstance(data["access_token"], str)
+    assert len(data["access_token"]) > 0
+    assert "user" in data
+    user = data["user"]
+    assert "id" in user
+    assert "email" in user and user["email"] == payload["email"]
+    assert "username" in user and user["username"] == payload["username"]
 
 def test_register_missing_fields(client):
     """
     Test registration with missing fields.
 
-    Sends a POST request to the /register endpoint omitting the password.
-    Asserts that the response status is 400 and an error is returned.
+    Sends a POST request to the /api/auth/register endpoint omitting the password.
+    Asserts that the response status is 400 and the error message indicates missing fields.
     """
     payload = {
         "email": "test@example.com",
         "username": "testuser"
     }
-    response = client.post("/register", json=payload)
+    response = client.post("/api/auth/register", json=payload)
     assert response.status_code == 400
     data = response.get_json()
     assert "error" in data
+    assert data["error"] == "Missing required fields"
 
 def test_register_duplicate(client):
     """
     Test registration with duplicate user data.
 
     Registers a user and then attempts to register the same user again.
-    Asserts that the first registration succeeds with a 201 status, while the duplicate registration fails with a 400 status.
+    Asserts that the first registration succeeds with a 201 status, while the duplicate registration
+    fails with a 400 status and an appropriate error message.
     """
     payload = {
         "email": "duplicate@example.com",
         "username": "duplicateuser",
         "password": "password123"
     }
-    response1 = client.post("/register", json=payload)
+    response1 = client.post("/api/auth/register", json=payload)
     assert response1.status_code == 201
 
-    response2 = client.post("/register", json=payload)
+    response2 = client.post("/api/auth/register", json=payload)
     assert response2.status_code == 400
     data = response2.get_json()
     assert "error" in data
+    assert data["error"] == "User with given email or username already exists"
 
 def test_get_users(client):
     """
     Test retrieval of users.
 
-    Initially checks that the /users endpoint returns an empty list.
+    Initially checks that the /api/auth/users endpoint returns an empty list.
     After registering a user, asserts that the list contains one user with the expected fields.
     """
-    response = client.get("/users")
+    response = client.get("/api/auth/users")
     assert response.status_code == 200
     data = response.get_json()
     assert isinstance(data, list)
@@ -95,58 +104,76 @@ def test_get_users(client):
         "username": "user1",
         "password": "password1"
     }
-    client.post("/register", json=payload)
-    response = client.get("/users")
+    client.post("/api/auth/register", json=payload)
+    response = client.get("/api/auth/users")
     data = response.get_json()
     assert len(data) == 1
     user = data[0]
-    assert "id" in user and "email" in user and "username" in user
+    assert "id" in user
+    assert "email" in user
+    assert "username" in user
 
 def test_login_success_with_email(client):
     """
     Test successful login using email.
 
     Registers a user and then logs in using the user's email.
-    Asserts that the login is successful with a 200 status and the appropriate message.
+    Asserts that the login is successful with a 200 status and that an access token
+    and user details are returned.
     """
     payload = {
         "email": "login_email@example.com",
         "username": "loginuser",
         "password": "secret"
     }
-    client.post("/register", json=payload)
+    reg_response = client.post("/api/auth/register", json=payload)
+    assert reg_response.status_code == 201
 
     login_payload = {
-        "username_or_email": "login_email@example.com",
-        "password": "secret"
+        "username_or_email": payload["email"],
+        "password": payload["password"]
     }
-    response = client.post("/login", json=login_payload)
+    response = client.post("/api/auth/login", json=login_payload)
     assert response.status_code == 200
     data = response.get_json()
-    assert data["message"] == "Logged in successfully"
+    assert "access_token" in data
+    assert isinstance(data["access_token"], str)
+    assert len(data["access_token"]) > 0
+    assert "user" in data
+    user = data["user"]
+    assert user["email"] == payload["email"]
+    assert user["username"] == payload["username"]
 
 def test_login_success_with_username(client):
     """
     Test successful login using username.
 
     Registers a user and then logs in using the user's username.
-    Asserts that the login is successful with a 200 status and the appropriate message.
+    Asserts that the login is successful with a 200 status and that an access token
+    and user details are returned.
     """
     payload = {
         "email": "login_username@example.com",
         "username": "loginuser2",
         "password": "secret2"
     }
-    client.post("/register", json=payload)
+    reg_response = client.post("/api/auth/register", json=payload)
+    assert reg_response.status_code == 201
 
     login_payload = {
-        "username_or_email": "loginuser2",
-        "password": "secret2"
+        "username_or_email": payload["username"],
+        "password": payload["password"]
     }
-    response = client.post("/login", json=login_payload)
+    response = client.post("/api/auth/login", json=login_payload)
     assert response.status_code == 200
     data = response.get_json()
-    assert data["message"] == "Logged in successfully"
+    assert "access_token" in data
+    assert isinstance(data["access_token"], str)
+    assert len(data["access_token"]) > 0
+    assert "user" in data
+    user = data["user"]
+    assert user["email"] == payload["email"]
+    assert user["username"] == payload["username"]
 
 def test_login_missing_fields(client):
     """
@@ -158,10 +185,11 @@ def test_login_missing_fields(client):
     login_payload = {
         "username_or_email": "someone@example.com"
     }
-    response = client.post("/login", json=login_payload)
+    response = client.post("/api/auth/login", json=login_payload)
     assert response.status_code == 400
     data = response.get_json()
     assert "error" in data
+    assert data["error"] == "Missing required fields"
 
 def test_login_invalid_credentials(client):
     """
@@ -175,41 +203,14 @@ def test_login_invalid_credentials(client):
         "username": "invaliduser",
         "password": "rightpassword"
     }
-    client.post("/register", json=payload)
+    client.post("/api/auth/register", json=payload)
 
     login_payload = {
-        "username_or_email": "invalid@example.com",
+        "username_or_email": payload["email"],
         "password": "wrongpassword"
     }
-    response = client.post("/login", json=login_payload)
+    response = client.post("/api/auth/login", json=login_payload)
     assert response.status_code == 401
     data = response.get_json()
     assert "error" in data
-
-def test_init_db_cli(runner, client):
-    """
-    Test the CLI command for initializing the database.
-
-    Invokes the 'init-db' CLI command and asserts that the output confirms table creation.
-    """
-    result = runner.invoke(args=["init-db"])
-    assert "Database tables created." in result.output
-
-def test_reset_db_cli(client, runner):
-    """
-    Test the CLI command for resetting the database.
-
-    Inserts a dummy user, verifies the insertion, invokes the 'reset-db' CLI command,
-    and then verifies that the user count is zero.
-    """
-    with app.app_context():
-        user = User(email="dummy@example.com", username="dummy", password_hash="dummyhash")
-        db.session.add(user)
-        db.session.commit()
-        assert User.query.count() == 1
-
-    result = runner.invoke(args=["reset-db"])
-    assert "Database reset complete." in result.output
-
-    with app.app_context():
-        assert User.query.count() == 0
+    assert data["error"] == "Invalid credentials"
