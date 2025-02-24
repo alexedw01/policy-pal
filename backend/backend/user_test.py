@@ -5,9 +5,7 @@ from backend.app import app, db, User
 @pytest.fixture
 def client():
     """
-    Fixture for configuring the Flask application for testing.
-
-    The application is set to testing mode and uses an in-memory SQLite database.
+    Configures the Flask application for testing using an in-memory SQLite database.
     The database tables are created before yielding the test client and cleaned up afterward.
     """
     app.config["TESTING"] = True
@@ -20,22 +18,19 @@ def client():
 
 def test_register_success(client):
     """
-    Test that a user is successfully registered.
-
-    Sends a POST request to the /api/auth/register endpoint with a valid payload.
-    Asserts that the response status is 201 and the response contains an access token
-    and user object with the expected fields.
+    Test that a user is successfully registered with all required fields.
     """
     payload = {
         "email": "test@example.com",
         "username": "testuser",
-        "password": "testpassword"
+        "password": "testpassword",
+        "age": 21,
+        "gender": "male",
+        "ethnicity": "asian",
+        "state": "california",
+        "political_affiliation": "democrat"
     }
-    response = client.post(
-        "/api/auth/register",
-        data=json.dumps(payload),
-        content_type="application/json"
-    )
+    response = client.post("/api/auth/register", json=payload)
     assert response.status_code == 201
     data = response.get_json()
     assert "access_token" in data
@@ -44,19 +39,17 @@ def test_register_success(client):
     assert "user" in data
     user = data["user"]
     assert "id" in user
-    assert "email" in user and user["email"] == payload["email"]
-    assert "username" in user and user["username"] == payload["username"]
+    assert user["email"] == payload["email"]
+    assert user["username"] == payload["username"]
 
 def test_register_missing_fields(client):
     """
-    Test registration with missing fields.
-
-    Sends a POST request to the /api/auth/register endpoint omitting the password.
-    Asserts that the response status is 400 and the error message indicates missing fields.
+    Test registration with missing required fields.
+    Omits several required fields so that the endpoint returns an error.
     """
     payload = {
-        "email": "test@example.com",
-        "username": "testuser"
+        "email": "missing@example.com",
+        "username": "missinguser"
     }
     response = client.post("/api/auth/register", json=payload)
     assert response.status_code == 400
@@ -67,15 +60,17 @@ def test_register_missing_fields(client):
 def test_register_duplicate(client):
     """
     Test registration with duplicate user data.
-
-    Registers a user and then attempts to register the same user again.
-    Asserts that the first registration succeeds with a 201 status, while the duplicate registration
-    fails with a 400 status and an appropriate error message.
+    First registration should succeed and duplicate should fail.
     """
     payload = {
         "email": "duplicate@example.com",
         "username": "duplicateuser",
-        "password": "password123"
+        "password": "password123",
+        "age": 30,
+        "gender": "female",
+        "ethnicity": "white",
+        "state": "texas",
+        "political_affiliation": "independent"
     }
     response1 = client.post("/api/auth/register", json=payload)
     assert response1.status_code == 201
@@ -86,13 +81,107 @@ def test_register_duplicate(client):
     assert "error" in data
     assert data["error"] == "User with given email or username already exists"
 
+def test_register_invalid_age(client):
+    """
+    Test registration with an invalid age (too low).
+    Valid age must be greater than 1 and less than 100.
+    """
+    payload = {
+        "email": "lowage@example.com",
+        "username": "lowageuser",
+        "password": "password",
+        "age": 1,  # Invalid age
+        "gender": "male",
+        "ethnicity": "asian",
+        "state": "california",
+        "political_affiliation": "democrat"
+    }
+    response = client.post("/api/auth/register", json=payload)
+    assert response.status_code == 400
+    data = response.get_json()
+    assert data["error"] == "Given age is invalid"
+
+def test_register_invalid_gender(client):
+    """
+    Test registration with an invalid gender.
+    """
+    payload = {
+        "email": "invalidgender@example.com",
+        "username": "invalidgenderuser",
+        "password": "password",
+        "age": 25,
+        "gender": "unknown",  # Invalid gender
+        "ethnicity": "asian",
+        "state": "california",
+        "political_affiliation": "democrat"
+    }
+    response = client.post("/api/auth/register", json=payload)
+    assert response.status_code == 400
+    data = response.get_json()
+    assert data["error"] == "Given gender is invalid"
+
+def test_register_invalid_ethnicity(client):
+    """
+    Test registration with an invalid ethnicity.
+    """
+    payload = {
+        "email": "invalidethnicity@example.com",
+        "username": "invalidethnicityuser",
+        "password": "password",
+        "age": 25,
+        "gender": "male",
+        "ethnicity": "martian",  # Invalid ethnicity
+        "state": "california",
+        "political_affiliation": "democrat"
+    }
+    response = client.post("/api/auth/register", json=payload)
+    assert response.status_code == 400
+    data = response.get_json()
+    assert data["error"] == "Given ethnicity is invalid"
+
+def test_register_invalid_state(client):
+    """
+    Test registration with an invalid state.
+    """
+    payload = {
+        "email": "invalidstate@example.com",
+        "username": "invalidstateuser",
+        "password": "password",
+        "age": 25,
+        "gender": "male",
+        "ethnicity": "asian",
+        "state": "atlantis",  # Invalid state
+        "political_affiliation": "democrat"
+    }
+    response = client.post("/api/auth/register", json=payload)
+    assert response.status_code == 400
+    data = response.get_json()
+    assert data["error"] == "Given state is invalid"
+
+def test_register_invalid_political_affiliation(client):
+    """
+    Test registration with an invalid political affiliation.
+    """
+    payload = {
+        "email": "invalidpol@example.com",
+        "username": "invalidpoluser",
+        "password": "password",
+        "age": 25,
+        "gender": "male",
+        "ethnicity": "asian",
+        "state": "california",
+        "political_affiliation": "fanatic"  # Invalid political affiliation
+    }
+    response = client.post("/api/auth/register", json=payload)
+    assert response.status_code == 400
+    data = response.get_json()
+    assert data["error"] == "Given political affiliation is invalid"
+
 def test_get_users(client):
     """
-    Test retrieval of users.
-
-    Initially checks that the /api/auth/users endpoint returns an empty list.
-    After registering a user, asserts that the list contains one user with the expected fields.
+    Test retrieval of registered users.
     """
+    # Initially, the users list should be empty.
     response = client.get("/api/auth/users")
     assert response.status_code == 200
     data = response.get_json()
@@ -102,7 +191,12 @@ def test_get_users(client):
     payload = {
         "email": "user1@example.com",
         "username": "user1",
-        "password": "password1"
+        "password": "password1",
+        "age": 22,
+        "gender": "female",
+        "ethnicity": "white",
+        "state": "florida",
+        "political_affiliation": "independent"
     }
     client.post("/api/auth/register", json=payload)
     response = client.get("/api/auth/users")
@@ -115,22 +209,23 @@ def test_get_users(client):
 
 def test_login_success_with_email(client):
     """
-    Test successful login using email.
-
-    Registers a user and then logs in using the user's email.
-    Asserts that the login is successful with a 200 status and that an access token
-    and user details are returned.
+    Test successful login using the user's email.
     """
     payload = {
         "email": "login_email@example.com",
         "username": "loginuser",
-        "password": "secret"
+        "password": "secret",
+        "age": 25,
+        "gender": "male",
+        "ethnicity": "asian",
+        "state": "california",
+        "political_affiliation": "democrat"
     }
     reg_response = client.post("/api/auth/register", json=payload)
     assert reg_response.status_code == 201
 
     login_payload = {
-        "username_or_email": payload["email"],
+        "email": payload["email"],  
         "password": payload["password"]
     }
     response = client.post("/api/auth/login", json=login_payload)
@@ -146,22 +241,23 @@ def test_login_success_with_email(client):
 
 def test_login_success_with_username(client):
     """
-    Test successful login using username.
-
-    Registers a user and then logs in using the user's username.
-    Asserts that the login is successful with a 200 status and that an access token
-    and user details are returned.
+    Test successful login using the user's username.
     """
     payload = {
         "email": "login_username@example.com",
         "username": "loginuser2",
-        "password": "secret2"
+        "password": "secret2",
+        "age": 26,
+        "gender": "female",
+        "ethnicity": "hispanic or latino",
+        "state": "new york",
+        "political_affiliation": "republican"
     }
     reg_response = client.post("/api/auth/register", json=payload)
     assert reg_response.status_code == 201
 
     login_payload = {
-        "username_or_email": payload["username"],
+        "email": payload["username"], 
         "password": payload["password"]
     }
     response = client.post("/api/auth/login", json=login_payload)
@@ -177,13 +273,10 @@ def test_login_success_with_username(client):
 
 def test_login_missing_fields(client):
     """
-    Test login attempt with missing fields.
-
-    Sends a login request without a password.
-    Asserts that the response status is 400 and an error message is returned.
+    Test login attempt with missing required fields.
     """
     login_payload = {
-        "username_or_email": "someone@example.com"
+        "email": "someone@example.com"  
     }
     response = client.post("/api/auth/login", json=login_payload)
     assert response.status_code == 400
@@ -194,19 +287,21 @@ def test_login_missing_fields(client):
 def test_login_invalid_credentials(client):
     """
     Test login attempt with invalid credentials.
-
-    Registers a user and attempts to log in with an incorrect password.
-    Asserts that the response status is 401 and an error message is returned.
     """
     payload = {
         "email": "invalid@example.com",
         "username": "invaliduser",
-        "password": "rightpassword"
+        "password": "rightpassword",
+        "age": 30,
+        "gender": "male",
+        "ethnicity": "asian",
+        "state": "california",
+        "political_affiliation": "democrat"
     }
     client.post("/api/auth/register", json=payload)
 
     login_payload = {
-        "username_or_email": payload["email"],
+        "email": payload["email"],
         "password": "wrongpassword"
     }
     response = client.post("/api/auth/login", json=login_payload)

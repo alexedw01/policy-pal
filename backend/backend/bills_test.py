@@ -2,13 +2,14 @@ import pytest
 import json
 from datetime import datetime, timezone
 from backend.app import app, db, Bill, serialize_bill
+from sqlalchemy import or_
 
 @pytest.fixture(scope="module")
 def client():
     """
     Fixture for configuring the Flask application for testing.
 
-    The application is set to testing mode and uses an in-memory SQLite database.
+    The application is set to testing mode and uses an SQLite database.
     The database tables are created before yielding the test client and cleaned up afterward.
     """
     app.config["TESTING"] = True
@@ -158,3 +159,60 @@ def test_search_bills(client):
     assert len(data) >= 1
     found = any("Test Bill One" in bill["title"] for bill in data)
     assert found
+
+# ---------------------- New Upvote Route Tests ----------------------
+
+def test_upvote_bill_success(client):
+    """
+    Test that a bill can be upvoted successfully.
+    """
+    with app.app_context():
+        bill = Bill.query.first()
+        bill_id = bill.id
+        initial_upvotes = bill.upvote_count
+
+    from flask_jwt_extended import create_access_token
+    token = create_access_token(identity="1")
+    headers = {"Authorization": f"Bearer {token}"}
+
+    response = client.post(f"/api/bills/{bill_id}/upvote", headers=headers)
+    assert response.status_code == 200
+    data = response.get_json()
+    assert data.get("message") == "Upvote successful"
+
+    with app.app_context():
+        updated_bill = db.session.get(Bill, bill_id)
+        assert updated_bill.upvote_count == initial_upvotes + 1
+
+def test_upvote_bill_already_voted(client):
+    """
+    Test that attempting to upvote the same bill twice with the same user returns an error.
+    """
+    from flask_jwt_extended import create_access_token
+    token = create_access_token(identity="2")
+    headers = {"Authorization": f"Bearer {token}"}
+
+    with app.app_context():
+        bill = Bill.query.order_by(Bill.id).first()
+        bill_id = bill.id
+
+    response1 = client.post(f"/api/bills/{bill_id}/upvote", headers=headers)
+    assert response1.status_code == 200
+
+    response2 = client.post(f"/api/bills/{bill_id}/upvote", headers=headers)
+    assert response2.status_code == 400
+    data = response2.get_json()
+    assert data.get("error") == "Already voted"
+
+def test_upvote_bill_not_found(client):
+    """
+    Test that attempting to upvote a non-existent bill returns a 404 error.
+    """
+    from flask_jwt_extended import create_access_token
+    token = create_access_token(identity="3")
+    headers = {"Authorization": f"Bearer {token}"}
+
+    response = client.post("/api/bills/999999/upvote", headers=headers)
+    assert response.status_code == 404
+    data = response.get_json()
+    assert data.get("error") == "Bill not found"

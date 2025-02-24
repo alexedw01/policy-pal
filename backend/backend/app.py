@@ -72,6 +72,11 @@ class User(db.Model):
         email (str): Unique email address of the user.
         username (str): Unique username chosen by the user.
         password_hash (str): Hashed password for security.
+        age (int): Age of the user.
+        gender (str): Gender of the user (e.g., Male, Female, Non-binary, Other).
+        ethnicity (str): Ethnic group the user belongs to (e.g. Hispanic or Latino, white, asian)
+        state (str): state the user lives in. 
+        political_affiliation (str): Political leaning (e.g., Democrat, Republican, Independent).
     """
     __tablename__ = "users"
     id = db.Column(db.Integer, primary_key=True)
@@ -79,6 +84,12 @@ class User(db.Model):
     username = db.Column(db.String(80), unique=True, nullable=False)
     password_hash = db.Column(db.String(256), nullable=False)
 
+    age = db.Column(db.Integer, nullable=True)
+    gender = db.Column(db.String(50), nullable=True)  
+    ethnicity = db.Column(db.String(50), nullable=True)
+    state = db.Column(db.String(50), nullable=True)
+    political_affiliation = db.Column(db.String(50), nullable=True)  
+    
     def set_password(self, password: str) -> None:
         """Hash and set the user's password."""
         self.password_hash = generate_password_hash(password)
@@ -127,8 +138,8 @@ class Bill(db.Model):
     full_text = db.Column(db.Text)
     ai_summary = db.Column(db.Text)
     upvote_count = db.Column(db.Integer, nullable=False, default=0)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=datetime.now(timezone.utc))
+    updated_at = db.Column(db.DateTime, onupdate=datetime.now(timezone.utc))
 
 class Upvote(db.Model):
     """
@@ -595,14 +606,59 @@ def register():
     email = data.get("email")
     username = data.get("username")
     password = data.get("password")
+    
+    age = data.get("age")
+    gender = data.get("gender")
+    ethnicity = data.get("ethnicity")
+    state = data.get("state")
+    political_affiliation = data.get("political_affiliation")
 
-    if not email or not username or not password:
+    if not email or not username or not password or not age or not gender or not state or not political_affiliation:
         return jsonify({"error": "Missing required fields"}), 400
-
+    
     if User.query.filter(or_(User.email == email, User.username == username)).first():
         return jsonify({"error": "User with given email or username already exists"}), 400
+    
+    if not (1 < age < 100): 
+        return jsonify({"error": "Given age is invalid"}), 400
+    
+    acceptable_genders = ["male", "female", "non-binary", "transgender man", "transgender woman", "prefer not to say", "other"]
+    if gender.lower() not in acceptable_genders:
+        return jsonify({"error": "Given gender is invalid"}), 400
+    
+    acceptable_ethnicities = ["hispanic or latino", "white", "black or african american", "asian", 
+                            "native hawaiian or other pacific islander", "american indian or alaska native"]
 
-    user = User(email=email, username=username)
+    
+    if ethnicity.lower() not in acceptable_ethnicities:
+        return jsonify({"error": "Given ethnicity is invalid"}), 400
+
+    acceptable_states = {
+        "alabama": "al", "alaska": "ak", "arizona": "az", "arkansas": "ar", "california": "ca",
+        "colorado": "co", "connecticut": "ct", "delaware": "de", "florida": "fl", "georgia": "ga",
+        "hawaii": "hi", "idaho": "id", "illinois": "il", "indiana": "in", "iowa": "ia",
+        "kansas": "ks", "kentucky": "ky", "louisiana": "la", "maine": "me", "maryland": "md",
+        "massachusetts": "ma", "michigan": "mi", "minnesota": "mn", "mississippi": "ms",
+        "missouri": "mo", "montana": "mt", "nebraska": "ne", "nevada": "nv", "new hampshire": "nh",
+        "new jersey": "nj", "new mexico": "nm", "new york": "ny", "north carolina": "nc",
+        "north dakota": "nd", "ohio": "oh", "oklahoma": "ok", "oregon": "or", "pennsylvania": "pa",
+        "rhode island": "ri", "south carolina": "sc", "south dakota": "sd", "tennessee": "tn",
+        "texas": "tx", "utah": "ut", "vermont": "vt", "virginia": "va", "washington": "wa",
+        "west virginia": "wv", "wisconsin": "wi", "wyoming": "wy", "other": "other"
+    }
+
+    if state.lower() not in acceptable_states and state.lower() not in acceptable_states.values():
+        return jsonify({"error": "Given state is invalid"}), 400
+    
+    acceptable_political_affiliations = [
+        "democrat", "republican", "independent", "libertarian", "green", "conservative", "progressive", 
+        "moderate", "socialist", "communist", "other"
+    ]
+    
+    if political_affiliation.lower() not in acceptable_political_affiliations:
+        return jsonify({"error": "Given political affiliation is invalid"}), 400
+
+    user = User(email=email, username=username, age=age, gender=gender, ethnicity=ethnicity, state=state, political_affiliation=political_affiliation)
     user.set_password(password)
     db.session.add(user)
     db.session.commit()
@@ -801,7 +857,7 @@ def get_full_bill(bill_id):
         JSON response containing the serialized bill details or a 404 error if not found.
     """
     try:
-        bill = Bill.query.get(bill_id)
+        bill = bill = db.session.get(Bill, bill_id)
         if not bill:
             return jsonify({"error": "Bill not found"}), 404
 
