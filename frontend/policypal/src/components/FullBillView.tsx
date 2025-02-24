@@ -22,7 +22,7 @@ export default function FullBillView({ billId }: FullBillViewProps) {
   useEffect(() => {
     const fetchBill = async () => {
       try {
-        const response = await fetch(`http://localhost:5000/api/bills/${billId}/full`);
+        const response = await fetch(`http://localhost:8080/api/bills/${billId}/full`);
         if (!response.ok) throw new Error('Failed to fetch bill');
         const data = await response.json();
         setBill(data);

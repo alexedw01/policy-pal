@@ -130,6 +130,22 @@ class Bill(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, onupdate=datetime.utcnow)
 
+class Upvote(db.Model):
+    """
+    Upvote model for tracking user upvotes on bills.
+
+    Attributes:
+        id (int): Primary key.
+        user_id (int): ID of the user who upvoted.
+        bill_id (int): ID of the bill that was upvoted.
+        created_at (datetime): Timestamp when the upvote was made.
+    """
+    __tablename__ = "upvotes"
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, nullable=False)
+    bill_id = db.Column(db.Integer, db.ForeignKey("bills.id"), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.now(timezone.utc))
+
 
 class ScrapeTracking(db.Model):
     """
@@ -591,7 +607,7 @@ def register():
     db.session.add(user)
     db.session.commit()
 
-    access_token = create_access_token(identity=user.id, expires_delta=timedelta(hours=1))
+    access_token = create_access_token(identity=str(user.id), expires_delta=timedelta(hours=1))
     return jsonify({
         "message": "User created successfully",
         "access_token": access_token,
@@ -634,7 +650,7 @@ def login():
     ).first()
 
     if user and user.check_password(password):
-        access_token = create_access_token(identity=user.id, expires_delta=timedelta(hours=1))
+        access_token = create_access_token(identity=str(user.id), expires_delta=timedelta(hours=1))
         return jsonify({
             "message": "Logged in successfully",
             "access_token": access_token,
@@ -798,8 +814,6 @@ def get_full_bill(bill_id):
         return jsonify({"error": str(e)}), 500
 
 
-
-
 @app.route("/api/search", methods=["GET"])
 def search_bills():
     """
@@ -828,6 +842,43 @@ def search_bills():
     except Exception as e:
         app.logger.error(f"Error in search: {e}")
         return jsonify({"error": str(e)}), 500
+    
+
+@app.route("/api/bills/<int:bill_id>/upvote", methods=["POST"])
+@jwt_required()
+def upvote_bill(bill_id):
+    """
+    Upvote a bill.
+
+    Users can upvote a bill, but each user can only upvote once.
+    """
+    try:
+        user_id = get_jwt_identity()
+
+        # Check if bill exists
+        bill = db.session.get(Bill, bill_id)
+        if not bill:
+            return jsonify({"error": "Bill not found"}), 404
+
+        # Check if user has already upvoted this bill
+        existing_vote = Upvote.query.filter_by(user_id=user_id, bill_id=bill_id).first()
+        if existing_vote:
+            return jsonify({"error": "Already voted"}), 400
+
+        # Add upvote record
+        upvote = Upvote(user_id=user_id, bill_id=bill_id, created_at=datetime.now(timezone.utc))
+        db.session.add(upvote)
+
+        # Increment bill's upvote count
+        bill.upvote_count += 1
+        db.session.commit()
+
+        return jsonify({"message": "Upvote successful"}), 200
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": str(e)}), 500
+
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=8080)
