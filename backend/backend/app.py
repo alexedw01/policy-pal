@@ -20,6 +20,7 @@ import click
 from flask import Flask, jsonify, request
 from flask_sqlalchemy import SQLAlchemy  
 from sqlalchemy import or_
+from sqlalchemy.ext.mutable import MutableDict
 from flask_cors import CORS
 from flask.cli import with_appcontext
 from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity
@@ -77,6 +78,7 @@ class User(db.Model):
         ethnicity (str): Ethnic group the user belongs to (e.g. Hispanic or Latino, white, asian)
         state (str): state the user lives in. 
         political_affiliation (str): Political leaning (e.g., Democrat, Republican, Independent).
+        voted_bills (JSON): A dictionary storing bill IDs as keys and the corresponding vote value as values.
     """
     __tablename__ = "users"
     id = db.Column(db.Integer, primary_key=True)
@@ -89,6 +91,8 @@ class User(db.Model):
     ethnicity = db.Column(db.String(50), nullable=True)
     state = db.Column(db.String(50), nullable=True)
     political_affiliation = db.Column(db.String(50), nullable=True)  
+    
+    voted_bills = db.Column(MutableDict.as_mutable(db.JSON), default=dict, nullable=False)
     
     def set_password(self, password: str) -> None:
         """Hash and set the user's password."""
@@ -118,7 +122,7 @@ class Bill(db.Model):
         text_preview (str): A preview snippet of the bill's text.
         full_text (str): The full text of the bill.
         ai_summary (str): An AI-generated summary of the bill.
-        upvote_count (int): A counter to identify bills with the most activity.
+        vote_count (int): A counter to identify bills with the most activity.
         created_at (datetime): The timestamp when the bill record was created.
         updated_at (datetime): The timestamp when the bill record was last updated.
     """
@@ -137,26 +141,75 @@ class Bill(db.Model):
     text_preview = db.Column(db.Text)
     full_text = db.Column(db.Text)
     ai_summary = db.Column(db.Text)
-    upvote_count = db.Column(db.Integer, nullable=False, default=0)
+    vote_count = db.Column(db.Integer, nullable=False, default=0)
     created_at = db.Column(db.DateTime, default=datetime.now(timezone.utc))
     updated_at = db.Column(db.DateTime, onupdate=datetime.now(timezone.utc))
 
-class Upvote(db.Model):
+def default_demographics():
+    return {
+        "upvote": {
+            "age_distribution": {"under_18": 0, "18_to_30": 0, "30_to_60": 0, "60_plus": 0},
+            "gender_distribution": {"male": 0, "female": 0, "non-binary": 0, "transgender": 0, "other": 0},
+            "ethnicity_distribution": {
+                "hispanic or latino": 0, "white": 0, "black or african american": 0, "asian": 0,
+                "native hawaiian or other pacific islander": 0, "american indian or alaska native": 0, "other": 0
+            },
+            "state_distribution": {
+                "al": 0, "ak": 0, "az": 0, "ar": 0, "ca": 0,
+                "co": 0, "ct": 0, "de": 0, "fl": 0, "ga": 0,
+                "hi": 0, "id": 0, "il": 0, "in": 0, "ia": 0,
+                "ks": 0, "ky": 0, "la": 0, "me": 0, "md": 0,
+                "ma": 0, "mi": 0, "mn": 0, "ms": 0, "mo": 0,
+                "mt": 0, "ne": 0, "nv": 0, "nh": 0, "nj": 0,
+                "nm": 0, "ny": 0, "nc": 0, "nd": 0, "oh": 0,
+                "ok": 0, "or": 0, "pa": 0, "ri": 0, "sc": 0,
+                "sd": 0, "tn": 0, "tx": 0, "ut": 0, "vt": 0,
+                "va": 0, "wa": 0, "wv": 0, "wi": 0, "wy": 0,
+                "other": 0
+            },
+            "political_affiliation_distribution": {
+                "democrat": 0, "republican": 0, "independent": 0, "libertarian": 0, "green": 0,
+                "conservative": 0, "progressive": 0, "moderate": 0, "socialist": 0, "communist": 0, "other": 0
+            }
+        },
+        "downvote": {
+            "age_distribution": {"under_18": 0, "18_to_30": 0, "30_to_60": 0, "60_plus": 0},
+            "gender_distribution": {"male": 0, "female": 0, "non-binary": 0, "transgender": 0, "other": 0},
+            "ethnicity_distribution": {
+                "hispanic or latino": 0, "white": 0, "black or african american": 0, "asian": 0,
+                "native hawaiian or other pacific islander": 0, "american indian or alaska native": 0, "other": 0
+            },
+            "state_distribution": {
+                "al": 0, "ak": 0, "az": 0, "ar": 0, "ca": 0,
+                "co": 0, "ct": 0, "de": 0, "fl": 0, "ga": 0,
+                "hi": 0, "id": 0, "il": 0, "in": 0, "ia": 0,
+                "ks": 0, "ky": 0, "la": 0, "me": 0, "md": 0,
+                "ma": 0, "mi": 0, "mn": 0, "ms": 0, "mo": 0,
+                "mt": 0, "ne": 0, "nv": 0, "nh": 0, "nj": 0,
+                "nm": 0, "ny": 0, "nc": 0, "nd": 0, "oh": 0,
+                "ok": 0, "or": 0, "pa": 0, "ri": 0, "sc": 0,
+                "sd": 0, "tn": 0, "tx": 0, "ut": 0, "vt": 0,
+                "va": 0, "wa": 0, "wv": 0, "wi": 0, "wy": 0,
+                "other": 0
+            },
+            "political_affiliation_distribution": {
+                "democrat": 0, "republican": 0, "independent": 0, "libertarian": 0, "green": 0,
+                "conservative": 0, "progressive": 0, "moderate": 0, "socialist": 0, "communist": 0, "other": 0
+            }
+        }
+    }
+
+class Vote(db.Model):
     """
-    Upvote model for tracking user upvotes on bills.
+    Association model that stores a vote cast by a user on a bill.
 
     Attributes:
-        id (int): Primary key.
-        user_id (int): ID of the user who upvoted.
-        bill_id (int): ID of the bill that was upvoted.
-        created_at (datetime): Timestamp when the upvote was made.
+        bill_id (int): Foreign key referencing the Bill being voted on.
+        vote_status (str): The vote status (e.g., 'yes', 'no', 'abstain').
     """
-    __tablename__ = "upvotes"
-    id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, nullable=False)
-    bill_id = db.Column(db.Integer, db.ForeignKey("bills.id"), nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.now(timezone.utc))
-
+    __tablename__ = "votes"
+    bill_id = db.Column(db.Integer, db.ForeignKey("bills.id"), primary_key=True)
+    demographics = db.Column(db.JSON, nullable=False, default=default_demographics)
 
 class ScrapeTracking(db.Model):
     """
@@ -371,7 +424,7 @@ class CongressionalScraper:
                 text_preview=bill_text,
                 full_text=full_text,
                 ai_summary=ai_summary,
-                upvote_count=0,
+                vote_count=0,
                 created_at=datetime.now(timezone.utc)
             )
             db.session.add(new_bill)
@@ -622,7 +675,7 @@ def register():
     if not (1 < age < 100): 
         return jsonify({"error": "Given age is invalid"}), 400
     
-    acceptable_genders = ["male", "female", "non-binary", "transgender man", "transgender woman", "prefer not to say", "other"]
+    acceptable_genders = ["male", "female", "non-binary", "transgender", "transgender", "other"]
     if gender.lower() not in acceptable_genders:
         return jsonify({"error": "Given gender is invalid"}), 400
     
@@ -647,7 +700,11 @@ def register():
         "west virginia": "wv", "wisconsin": "wi", "wyoming": "wy", "other": "other"
     }
 
-    if state.lower() not in acceptable_states and state.lower() not in acceptable_states.values():
+    state = state.lower()
+
+    if state in acceptable_states.keys():
+        state = acceptable_states[state]  # Convert full name to abbreviation
+    elif state not in acceptable_states.values():
         return jsonify({"error": "Given state is invalid"}), 400
     
     acceptable_political_affiliations = [
@@ -658,7 +715,11 @@ def register():
     if political_affiliation.lower() not in acceptable_political_affiliations:
         return jsonify({"error": "Given political affiliation is invalid"}), 400
 
-    user = User(email=email, username=username, age=age, gender=gender, ethnicity=ethnicity, state=state, political_affiliation=political_affiliation)
+    user = User(email=email, username=username, age=age, gender=gender.lower(), 
+                ethnicity=ethnicity.lower(), state=state.lower(), 
+                political_affiliation=political_affiliation.lower(),
+                voted_bills={})
+
     user.set_password(password)
     db.session.add(user)
     db.session.commit()
@@ -751,7 +812,7 @@ def serialize_bill(bill):
         "text_preview": bill.text_preview,
         "full_text": bill.full_text,
         "ai_summary": bill.ai_summary,
-        "upvote_count": bill.upvote_count if hasattr(bill, 'upvote_count') else 0,
+        "vote_count": bill.vote_count if hasattr(bill, 'vote_count') else 0,
         "created_at": bill.created_at.isoformat() if bill.created_at else None,
         "updated_at": bill.updated_at.isoformat() if bill.updated_at else None
     }
@@ -759,30 +820,6 @@ def serialize_bill(bill):
 # ------------------------------------------------------------------------------
 # Bill API Endpoints
 # ------------------------------------------------------------------------------
-# more for manual testing purposes
-@app.route("/api/bills-minimal", methods=["GET"])
-def get_minimal_bills():
-    """
-    API endpoint to retrieve a simple list of bills.
-
-    Each bill in the list includes only:
-      - id
-      - bill_number
-      - title
-      - latest_action_date 
-      - ai_summary
-    """
-    bills = Bill.query.all()
-    minimal_bills = [{
-        "id": bill.id,
-        "bill_number": bill.bill_number,
-        "title": bill.title,
-        "latest_action_date": bill.latest_action_date.isoformat() if bill.latest_action_date else None,
-        "ai_summary": bill.ai_summary
-    } for bill in bills]
-    return jsonify(minimal_bills), 200
-
-
 @app.route("/api/bills", methods=["GET"])
 def get_bills():
     """
@@ -832,13 +869,13 @@ def get_bills():
 @app.route("/api/bills/trending", methods=["GET"])
 def get_trending_bills():
     """
-    API endpoint to retrieve the top 10 trending bills sorted by upvote count in descending order.
+    API endpoint to retrieve the top 10 trending bills sorted by vote count in descending order.
 
     Returns:
         JSON response containing a list of serialized trending bills.
     """
     try:
-        bills = Bill.query.order_by(Bill.upvote_count.desc()).limit(10).all()
+        bills = Bill.query.order_by(Bill.vote_count.desc()).limit(10).all()
         return jsonify([serialize_bill(bill) for bill in bills])
     except Exception as e:
         app.logger.error(f"Error fetching trending bills: {e}")
@@ -857,7 +894,7 @@ def get_full_bill(bill_id):
         JSON response containing the serialized bill details or a 404 error if not found.
     """
     try:
-        bill = bill = db.session.get(Bill, bill_id)
+        bill = db.session.get(Bill, bill_id)
         if not bill:
             return jsonify({"error": "Bill not found"}), 404
 
@@ -899,42 +936,189 @@ def search_bills():
         app.logger.error(f"Error in search: {e}")
         return jsonify({"error": str(e)}), 500
     
-
-@app.route("/api/bills/<int:bill_id>/upvote", methods=["POST"])
+@app.route("/api/bills/<int:bill_id>/vote", methods=["POST"])
 @jwt_required()
-def upvote_bill(bill_id):
+def vote_on_bill(bill_id):
     """
-    Upvote a bill.
-
-    Users can upvote a bill, but each user can only upvote once.
+    Endpoint to allow a user to vote on a bill. It handles three vote statuses:
+      - "upvote" or "downvote": casting or changing a vote,
+      - "none": removing an existing vote.
+    It updates the Vote entity's demographic counters and the User's voted_bills accordingly.
     """
     try:
-        user_id = get_jwt_identity()
+        data = request.get_json()
+        vote_status = data.get("vote_status")
+        
+        if vote_status not in ["upvote", "downvote", "none"]:
+            return jsonify({"error": "Invalid vote status. Must be 'upvote', 'downvote', or 'none'."}), 400
 
-        # Check if bill exists
+        user_id = get_jwt_identity()
+        user = db.session.get(User, user_id)
+        if not user:
+            return jsonify({"error": "User not found."}), 404
+
         bill = db.session.get(Bill, bill_id)
         if not bill:
-            return jsonify({"error": "Bill not found"}), 404
+            return jsonify({"error": "Bill not found."}), 404
 
-        # Check if user has already upvoted this bill
-        existing_vote = Upvote.query.filter_by(user_id=user_id, bill_id=bill_id).first()
-        if existing_vote:
-            return jsonify({"error": "Already voted"}), 400
+        if user.age is None:
+            return jsonify({"error": "User age not specified."}), 400
 
-        # Add upvote record
-        upvote = Upvote(user_id=user_id, bill_id=bill_id, created_at=datetime.now(timezone.utc))
-        db.session.add(upvote)
+        if user.age < 18:
+            age_category = "under_18"
+        elif 18 <= user.age < 30:
+            age_category = "18_to_30"
+        elif 30 <= user.age < 60:
+            age_category = "30_to_60"
+        else:
+            age_category = "60_plus"
 
-        # Increment bill's upvote count
-        bill.upvote_count += 1
+        # Normalize demographics.
+        gender = user.gender.lower() if user.gender else "other"
+        if gender not in ["male", "female", "non-binary", "transgender", "other"]:
+            gender = "other"
+
+        ethnicity = user.ethnicity.lower() if user.ethnicity else "other"
+        valid_ethnicities = [
+            "hispanic or latino", "white", "black or african american", "asian",
+            "native hawaiian or other pacific islander", "american indian or alaska native", "other"
+        ]
+        if ethnicity not in valid_ethnicities:
+            ethnicity = "other"
+
+        state = user.state.lower() if user.state else "other"
+        valid_states = [
+            "al", "ak", "az", "ar", "ca", "co", "ct", "de", "fl", "ga",
+            "hi", "id", "il", "in", "ia", "ks", "ky", "la", "me", "md",
+            "ma", "mi", "mn", "ms", "mo", "mt", "ne", "nv", "nh", "nj",
+            "nm", "ny", "nc", "nd", "oh", "ok", "or", "pa", "ri", "sc",
+            "sd", "tn", "tx", "ut", "vt", "va", "wa", "wv", "wi", "wy", "other"
+        ]
+        if state not in valid_states:
+            state = "other"
+
+        political_affiliation = user.political_affiliation.lower() if user.political_affiliation else "other"
+        valid_political = [
+            "democrat", "republican", "independent", "libertarian", "green",
+            "conservative", "progressive", "moderate", "socialist", "communist", "other"
+        ]
+        if political_affiliation not in valid_political:
+            political_affiliation = "other"
+
+        # Get or create the vote record for the bill.
+        vote_record = Vote.query.filter_by(bill_id=bill_id).first()
+        if not vote_record:
+            if vote_status != "none":
+                vote_record = Vote(bill_id=bill_id, demographics=default_demographics())
+                db.session.add(vote_record)
+            else:
+                return jsonify({"error": "No existing vote to remove for this bill."}), 400
+
+        previous_vote = user.voted_bills.get(str(bill_id))
+
+        # CASE 1: User has not voted yet.
+        if previous_vote is None:
+            if vote_status == "none":
+                return jsonify({"error": "You haven't voted on this bill yet."}), 400
+
+            # Increment demographics for the new vote.
+            demo = vote_record.demographics[vote_status]
+            demo["age_distribution"][age_category] = demo["age_distribution"].get(age_category, 0) + 1
+            demo["gender_distribution"][gender] = demo["gender_distribution"].get(gender, 0) + 1
+            demo["ethnicity_distribution"][ethnicity] = demo["ethnicity_distribution"].get(ethnicity, 0) + 1
+            demo["state_distribution"][state] = demo["state_distribution"].get(state, 0) + 1
+            demo["political_affiliation_distribution"][political_affiliation] = demo["political_affiliation_distribution"].get(political_affiliation, 0) + 1
+            vote_record.demographics[vote_status] = demo
+
+            bill.vote_count += 1
+            user.voted_bills[str(bill_id)] = vote_status
+
+        # CASE 2: User has already voted on this bill.
+        else:
+            if vote_status == "none":
+                # Remove the vote: decrement demographics.
+                old_demo = vote_record.demographics[previous_vote]
+                old_demo["age_distribution"][age_category] = max(old_demo["age_distribution"].get(age_category, 0) - 1, 0)
+                old_demo["gender_distribution"][gender] = max(old_demo["gender_distribution"].get(gender, 0) - 1, 0)
+                old_demo["ethnicity_distribution"][ethnicity] = max(old_demo["ethnicity_distribution"].get(ethnicity, 0) - 1, 0)
+                old_demo["state_distribution"][state] = max(old_demo["state_distribution"].get(state, 0) - 1, 0)
+                old_demo["political_affiliation_distribution"][political_affiliation] = max(old_demo["political_affiliation_distribution"].get(political_affiliation, 0) - 1, 0)
+                vote_record.demographics[previous_vote] = old_demo
+
+                bill.vote_count = max(bill.vote_count - 1, 0)
+                if str(bill_id) in user.voted_bills:
+                    del user.voted_bills[str(bill_id)]
+
+            else:
+                # If the vote is the same as before, nothing needs to change.
+                if previous_vote == vote_status:
+                    return jsonify({"message": "Vote already recorded with the same status."}), 200
+
+                # Changing the vote: first remove the old vote's demographics.
+                old_demo = vote_record.demographics[previous_vote]
+                old_demo["age_distribution"][age_category] = max(old_demo["age_distribution"].get(age_category, 0) - 1, 0)
+                old_demo["gender_distribution"][gender] = max(old_demo["gender_distribution"].get(gender, 0) - 1, 0)
+                old_demo["ethnicity_distribution"][ethnicity] = max(old_demo["ethnicity_distribution"].get(ethnicity, 0) - 1, 0)
+                old_demo["state_distribution"][state] = max(old_demo["state_distribution"].get(state, 0) - 1, 0)
+                old_demo["political_affiliation_distribution"][political_affiliation] = max(old_demo["political_affiliation_distribution"].get(political_affiliation, 0) - 1, 0)
+                vote_record.demographics[previous_vote] = old_demo
+
+                # Then add the new vote's demographics.
+                new_demo = vote_record.demographics[vote_status]
+                new_demo["age_distribution"][age_category] = new_demo["age_distribution"].get(age_category, 0) + 1
+                new_demo["gender_distribution"][gender] = new_demo["gender_distribution"].get(gender, 0) + 1
+                new_demo["ethnicity_distribution"][ethnicity] = new_demo["ethnicity_distribution"].get(ethnicity, 0) + 1
+                new_demo["state_distribution"][state] = new_demo["state_distribution"].get(state, 0) + 1
+                new_demo["political_affiliation_distribution"][political_affiliation] = new_demo["political_affiliation_distribution"].get(political_affiliation, 0) + 1
+                vote_record.demographics[vote_status] = new_demo
+
+                # Update the user's vote to the new status.
+                user.voted_bills[str(bill_id)] = vote_status
+
         db.session.commit()
-
-        return jsonify({"message": "Upvote successful"}), 200
+        return jsonify({
+            "message": "Vote processed successfully",
+            "vote": {
+                "bill_id": bill_id,
+                "vote_status": vote_status,
+                "demographics": vote_record.demographics,
+            },
+            "bill": {
+                "id": bill.id,
+                "vote_count": bill.vote_count
+            }
+        }), 200
 
     except Exception as e:
         db.session.rollback()
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": f"An error occurred: {str(e)}"}), 500
 
+
+@app.route("/api/bills/<int:bill_id>/demographics", methods=["GET"])
+def get_bill_demographics(bill_id):
+    """
+    Endpoint to retrieve demographic information for votes on a given bill.
+    Returns the demographics data from the Vote record associated with the bill,
+    or the default demographics if no votes have been recorded yet.
+    """
+    try:
+        bill = db.session.get(Bill, bill_id)
+        if not bill:
+            return jsonify({"error": "Bill not found."}), 404
+
+        vote_record = Vote.query.filter_by(bill_id=bill_id).first()
+        if vote_record is None:
+            demographics = default_demographics()
+        else:
+            demographics = vote_record.demographics
+
+        return jsonify({
+            "bill_id": bill_id,
+            "demographics": demographics
+        }), 200
+
+    except Exception as e:
+        return jsonify({"error": f"An error occurred: {str(e)}"}), 500
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=8080)

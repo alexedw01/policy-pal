@@ -309,3 +309,26 @@ def test_login_invalid_credentials(client):
     data = response.get_json()
     assert "error" in data
     assert data["error"] == "Invalid credentials"
+
+def test_register_state_conversion(client):
+    """
+    Test that a user registering with a full state name has their state
+    converted to the correct abbreviation in the database.
+    """
+    payload = {
+        "email": "fullstate@example.com",
+        "username": "fullstateuser",
+        "password": "password",
+        "age": 25,
+        "gender": "male",
+        "ethnicity": "asian",
+        "state": "california",  
+        "political_affiliation": "democrat"
+    }
+    response = client.post("/api/auth/register", json=payload)
+    assert response.status_code == 201
+
+    with app.app_context():
+        user = User.query.filter_by(email="fullstate@example.com").first()
+        assert user is not None
+        assert user.state == "ca"

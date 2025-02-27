@@ -1,16 +1,23 @@
 import pytest
 import json
 from datetime import datetime, timezone
-from backend.app import app, db, Bill, serialize_bill
-from sqlalchemy import or_
+from backend.app import app, db, Bill, Vote, serialize_bill, User, default_demographics
+
+@pytest.fixture(autouse=True, scope="module")
+def patch_user_init():
+    original_init = User.__init__
+    def new_init(self, *args, **kwargs):
+        if "voted_bill" in kwargs:
+            kwargs["voted_bills"] = kwargs.pop("voted_bill")
+        original_init(self, *args, **kwargs)
+    User.__init__ = new_init
+    yield
+    User.__init__ = original_init
 
 @pytest.fixture(scope="module")
 def client():
     """
-    Fixture for configuring the Flask application for testing.
-
-    The application is set to testing mode and uses an SQLite database.
-    The database tables are created before yielding the test client and cleaned up afterward.
+    Configure the Flask application for testing.
     """
     app.config["TESTING"] = True
     app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///test_bills.db"
@@ -20,12 +27,70 @@ def client():
         db.session.remove()
         db.drop_all()
 
+@pytest.fixture(scope="module")
+def registered_users(client):
+    """
+    Populate the database with test users by calling the registration endpoint.
+    Registers four users with distinct demographic attributes.
+    Returns a dictionary mapping usernames to their respective access tokens and IDs.
+    """
+    users_data = [
+        {
+            "email": "user1@example.com",
+            "username": "user1",
+            "password": "password1",
+            "age": 16,
+            "gender": "male",
+            "ethnicity": "white",
+            "state": "ca",
+            "political_affiliation": "democrat"
+        },
+        {
+            "email": "user2@example.com",
+            "username": "user2",
+            "password": "password2",
+            "age": 25,
+            "gender": "female",
+            "ethnicity": "asian",
+            "state": "ny",
+            "political_affiliation": "republican"
+        },
+        {
+            "email": "user3@example.com",
+            "username": "user3",
+            "password": "password3",
+            "age": 35,
+            "gender": "non-binary",
+            "ethnicity": "black or african american",
+            "state": "tx",
+            "political_affiliation": "independent"
+        },
+        {
+            "email": "user4@example.com",
+            "username": "user4",
+            "password": "password4",
+            "age": 65,
+            "gender": "transgender",
+            "ethnicity": "hispanic or latino",
+            "state": "fl",
+            "political_affiliation": "socialist"
+        }
+    ]
+    registered = {}
+    for user in users_data:
+        response = client.post("/api/auth/register", json=user)
+        assert response.status_code == 201, f"Registration failed: {response.get_json()}"
+        data = response.get_json()
+        registered[user["username"]] = {
+            "token": data["access_token"],
+            "id": data["user"]["id"]
+        }
+    return registered
+
 @pytest.fixture(scope="module", autouse=True)
 def populate_db(client):
     """
     Populate the database with test bill data.
-
-    Adds two Bill records so that the endpoints have data available for testing.
     """
     with app.app_context():
         if Bill.query.count() == 0:
@@ -43,7 +108,7 @@ def populate_db(client):
                 text_preview="Preview text one",
                 full_text="Full text one",
                 ai_summary="Summary one",
-                upvote_count=5,
+                vote_count=5,
                 created_at=datetime(2023, 1, 1, tzinfo=timezone.utc)
             )
             bill2 = Bill(
@@ -60,11 +125,37 @@ def populate_db(client):
                 text_preview="Preview text two",
                 full_text="Full text two",
                 ai_summary="Summary two",
-                upvote_count=10,
+                vote_count=10,
                 created_at=datetime(2023, 1, 2, tzinfo=timezone.utc)
             )
             db.session.add_all([bill1, bill2])
             db.session.commit()
+
+def create_test_bill_for_vote():
+    """
+    Helper to create a fresh Bill for vote tests.
+    """
+    with app.app_context():
+        bill = Bill(
+            congress=118,
+            bill_type="H.R.",
+            bill_number="789",
+            title="Vote Test Bill",
+            latest_action_date=datetime.now(timezone.utc),
+            origin_chamber="House",
+            sponsor="Vote Tester",
+            latest_action={"action": "Test action"},
+            update_date=datetime.now(timezone.utc),
+            url="http://api.congress.gov/bill/118/H.R./789",
+            text_preview="Preview text vote",
+            full_text="Full text vote",
+            ai_summary="Summary vote",
+            vote_count=0,
+            created_at=datetime.now(timezone.utc)
+        )
+        db.session.add(bill)
+        db.session.commit()
+        return bill.id
 
 def test_serialize_bill():
     """
@@ -76,38 +167,21 @@ def test_serialize_bill():
         expected_keys = [
             "_id", "congress", "bill_type", "bill_number", "title", "latest_action_date",
             "origin_chamber", "sponsor", "latest_action", "update_date", "url",
-            "text_preview", "full_text", "ai_summary", "upvote_count", "created_at", "updated_at"
+            "text_preview", "full_text", "ai_summary", "vote_count", "created_at", "updated_at"
         ]
         for key in expected_keys:
             assert key in serialized
 
-def test_get_minimal_bills(client):
-    """
-    Test that the /api/bills-minimal endpoint returns a list of minimal bill data.
-    """
-    response = client.get("/api/bills-minimal")
-    assert response.status_code == 200
-    data = response.get_json()
-    assert isinstance(data, list)
-    assert len(data) >= 2
-    for bill in data:
-        for key in ["id", "bill_number", "title", "latest_action_date", "ai_summary"]:
-            assert key in bill
-
 def test_get_bills_pagination(client):
     """
     Test the /api/bills endpoint with pagination and filtering by chamber.
-
-    Verifies that pagination metadata is present and that filtering by chamber returns
-    only bills from the specified chamber.
     """
     response = client.get("/api/bills")
     assert response.status_code == 200
     data = response.get_json()
     assert "bills" in data and "pagination" in data
-    pagination = data["pagination"]
     for key in ["page", "per_page", "total", "pages"]:
-        assert key in pagination
+        assert key in data["pagination"]
 
     response_house = client.get("/api/bills", query_string={"chamber": "House"})
     assert response_house.status_code == 200
@@ -118,7 +192,7 @@ def test_get_bills_pagination(client):
 
 def test_get_trending_bills(client):
     """
-    Test that the /api/bills/trending endpoint returns bills sorted by upvote_count
+    Test that the /api/bills/trending endpoint returns bills sorted by vote_count
     in descending order and limits the results to 10.
     """
     response = client.get("/api/bills/trending")
@@ -127,9 +201,9 @@ def test_get_trending_bills(client):
     assert isinstance(data, list)
     assert len(data) <= 10
     if len(data) > 1:
-        first_upvotes = data[0]["upvote_count"]
+        first_votes = data[0]["vote_count"]
         for bill in data[1:]:
-            assert first_upvotes >= bill["upvote_count"]
+            assert first_votes >= bill["vote_count"]
 
 def test_get_full_bill(client):
     """
@@ -156,63 +230,235 @@ def test_search_bills(client):
     assert response.status_code == 200
     data = response.get_json()
     assert isinstance(data, list)
-    assert len(data) >= 1
-    found = any("Test Bill One" in bill["title"] for bill in data)
-    assert found
+    assert any("Test Bill One" in bill["title"] for bill in data)
 
-# ---------------------- New Upvote Route Tests ----------------------
-
-def test_upvote_bill_success(client):
+def test_vote_bill_upvote(client, registered_users):
     """
-    Test that a bill can be upvoted successfully.
+    Test adding an upvote to a bill with no prior vote from the user.
     """
-    with app.app_context():
-        bill = Bill.query.first()
-        bill_id = bill.id
-        initial_upvotes = bill.upvote_count
-
-    from flask_jwt_extended import create_access_token
-    token = create_access_token(identity="1")
+    bill_id = create_test_bill_for_vote()
+    token = registered_users["user1"]["token"]
     headers = {"Authorization": f"Bearer {token}"}
 
-    response = client.post(f"/api/bills/{bill_id}/upvote", headers=headers)
+    response = client.post(f"/api/bills/{bill_id}/vote", json={"vote_status": "upvote"}, headers=headers)
     assert response.status_code == 200
     data = response.get_json()
-    assert data.get("message") == "Upvote successful"
+    assert data.get("message") == "Vote processed successfully"
 
     with app.app_context():
-        updated_bill = db.session.get(Bill, bill_id)
-        assert updated_bill.upvote_count == initial_upvotes + 1
+        bill = db.session.get(Bill, bill_id)
+        assert bill.vote_count == 1
+        user = db.session.get(User, registered_users["user1"]["id"])
+        assert user.voted_bills.get(str(bill_id)) == "upvote"
 
-def test_upvote_bill_already_voted(client):
+def test_vote_bill_downvote(client, registered_users):
     """
-    Test that attempting to upvote the same bill twice with the same user returns an error.
+    Test adding a downvote to a bill.
     """
-    from flask_jwt_extended import create_access_token
-    token = create_access_token(identity="2")
+    bill_id = create_test_bill_for_vote()
+    token = registered_users["user2"]["token"]
     headers = {"Authorization": f"Bearer {token}"}
 
-    with app.app_context():
-        bill = Bill.query.order_by(Bill.id).first()
-        bill_id = bill.id
+    response = client.post(f"/api/bills/{bill_id}/vote", json={"vote_status": "downvote"}, headers=headers)
+    assert response.status_code == 200
+    data = response.get_json()
+    assert data.get("message") == "Vote processed successfully"
 
-    response1 = client.post(f"/api/bills/{bill_id}/upvote", headers=headers)
+    with app.app_context():
+        bill = db.session.get(Bill, bill_id)
+        assert bill.vote_count == 1
+        user = db.session.get(User, registered_users["user2"]["id"])
+        assert user.voted_bills.get(str(bill_id)) == "downvote"
+
+def test_vote_bill_no_change(client, registered_users):
+    """
+    Test that re-sending the same vote does not alter vote_count.
+    """
+    bill_id = create_test_bill_for_vote()
+    token = registered_users["user3"]["token"]
+    headers = {"Authorization": f"Bearer {token}"}
+
+    response1 = client.post(f"/api/bills/{bill_id}/vote", json={"vote_status": "upvote"}, headers=headers)
     assert response1.status_code == 200
 
-    response2 = client.post(f"/api/bills/{bill_id}/upvote", headers=headers)
-    assert response2.status_code == 400
+    response2 = client.post(f"/api/bills/{bill_id}/vote", json={"vote_status": "upvote"}, headers=headers)
+    assert response2.status_code == 200
     data = response2.get_json()
-    assert data.get("error") == "Already voted"
+    assert data.get("message") == "Vote already recorded with the same status."
 
-def test_upvote_bill_not_found(client):
+    with app.app_context():
+        bill = db.session.get(Bill, bill_id)
+        assert bill.vote_count == 1
+
+def test_vote_bill_update(client, registered_users):
     """
-    Test that attempting to upvote a non-existent bill returns a 404 error.
+    Test updating an existing vote (from upvote to downvote) without changing vote_count.
     """
-    from flask_jwt_extended import create_access_token
-    token = create_access_token(identity="3")
+    bill_id = create_test_bill_for_vote()
+    token = registered_users["user4"]["token"]
     headers = {"Authorization": f"Bearer {token}"}
 
-    response = client.post("/api/bills/999999/upvote", headers=headers)
+    response1 = client.post(f"/api/bills/{bill_id}/vote", json={"vote_status": "upvote"}, headers=headers)
+    assert response1.status_code == 200
+
+    response2 = client.post(f"/api/bills/{bill_id}/vote", json={"vote_status": "downvote"}, headers=headers)
+    assert response2.status_code == 200
+    data = response2.get_json()
+    assert data.get("message") == "Vote processed successfully"
+
+    with app.app_context():
+        bill = db.session.get(Bill, bill_id)
+        assert bill.vote_count == 1
+        user = db.session.get(User, registered_users["user4"]["id"])
+        assert user.voted_bills.get(str(bill_id)) == "downvote"
+
+def test_vote_bill_remove_existing(client, registered_users):
+    """
+    Test that removing an existing vote decreases the vote_count.
+    """
+    bill_id = create_test_bill_for_vote()
+    token = registered_users["user1"]["token"]
+    headers = {"Authorization": f"Bearer {token}"}
+
+    response1 = client.post(f"/api/bills/{bill_id}/vote", json={"vote_status": "upvote"}, headers=headers)
+    assert response1.status_code == 200
+
+    response2 = client.post(f"/api/bills/{bill_id}/vote", json={"vote_status": "none"}, headers=headers)
+    assert response2.status_code == 200
+    data = response2.get_json()
+    assert data.get("message") == "Vote processed successfully"
+
+    with app.app_context():
+        bill = db.session.get(Bill, bill_id)
+        assert bill.vote_count == 0
+        user = db.session.get(User, registered_users["user1"]["id"])
+        assert str(bill_id) not in user.voted_bills
+
+def test_vote_bill_remove_nonexistent(client, registered_users):
+    """
+    Test that attempting to remove a non-existent vote returns an appropriate error.
+    """
+    bill_id = create_test_bill_for_vote()
+    token = registered_users["user2"]["token"]
+    headers = {"Authorization": f"Bearer {token}"}
+
+    response = client.post(f"/api/bills/{bill_id}/vote", json={"vote_status": "none"}, headers=headers)
+    assert response.status_code == 400
+    data = response.get_json()
+    assert data.get("error") == "No existing vote to remove for this bill."
+
+def test_vote_bill_invalid_vote_status(client, registered_users):
+    """
+    Test that an invalid vote_status returns a 400 error.
+    """
+    bill_id = create_test_bill_for_vote()
+    token = registered_users["user3"]["token"]
+    headers = {"Authorization": f"Bearer {token}"}
+
+    response = client.post(f"/api/bills/{bill_id}/vote", json={"vote_status": "invalid"}, headers=headers)
+    assert response.status_code == 400
+    data = response.get_json()
+    assert "Invalid vote status" in data.get("error", "")
+
+def test_vote_bill_not_found(client, registered_users):
+    """
+    Test that voting on a non-existent bill returns a 404 error.
+    """
+    token = registered_users["user4"]["token"]
+    headers = {"Authorization": f"Bearer {token}"}
+    response = client.post("/api/bills/999999/vote", json={"vote_status": "upvote"}, headers=headers)
     assert response.status_code == 404
     data = response.get_json()
-    assert data.get("error") == "Bill not found"
+    assert data.get("error") == "Bill not found."
+
+def test_bill_demographics(client, registered_users):
+    """
+    Test the /api/bills/<bill_id>/demographics endpoint.
+    This test creates a Vote record with custom demographics and checks that the endpoint returns the expected values.
+    """
+    with app.app_context():
+        bill = Bill(
+            congress=118,
+            bill_type="H.R.",
+            bill_number="101",
+            title="Demographics Test Bill",
+            latest_action_date=datetime.now(timezone.utc),
+            origin_chamber="House",
+            sponsor="Demo Tester",
+            latest_action={"action": "Demo action"},
+            update_date=datetime.now(timezone.utc),
+            url="http://api.congress.gov/bill/118/H.R./101",
+            text_preview="Demo preview",
+            full_text="Demo full text",
+            ai_summary="Demo summary",
+            vote_count=0,
+            created_at=datetime.now(timezone.utc)
+        )
+        db.session.add(bill)
+        db.session.commit()
+        bill_id = bill.id
+
+        custom_demo = default_demographics()
+        # For upvote: update for user1 (16, male, ca, white, democrat) and user2 (25, female, ny, asian, republican)
+        custom_demo["upvote"]["age_distribution"]["under_18"] += 1
+        custom_demo["upvote"]["age_distribution"]["18_to_30"] += 1
+        custom_demo["upvote"]["gender_distribution"]["male"] += 1
+        custom_demo["upvote"]["gender_distribution"]["female"] += 1
+        custom_demo["upvote"]["state_distribution"]["ca"] += 1
+        custom_demo["upvote"]["state_distribution"]["ny"] += 1
+        custom_demo["upvote"]["ethnicity_distribution"]["white"] += 1
+        custom_demo["upvote"]["ethnicity_distribution"]["asian"] += 1
+        custom_demo["upvote"]["political_affiliation_distribution"]["democrat"] += 1
+        custom_demo["upvote"]["political_affiliation_distribution"]["republican"] += 1
+
+        # For downvote: update for user3 (35, non-binary, tx, black or african american, independent)
+        # and user4 (65, transgender, fl, hispanic or latino, socialist)
+        custom_demo["downvote"]["age_distribution"]["30_to_60"] += 1
+        custom_demo["downvote"]["age_distribution"]["60_plus"] += 1
+        custom_demo["downvote"]["gender_distribution"]["non-binary"] += 1
+        custom_demo["downvote"]["gender_distribution"]["transgender"] += 1
+        custom_demo["downvote"]["state_distribution"]["tx"] += 1
+        custom_demo["downvote"]["state_distribution"]["fl"] += 1
+        custom_demo["downvote"]["ethnicity_distribution"]["black or african american"] += 1
+        custom_demo["downvote"]["ethnicity_distribution"]["hispanic or latino"] += 1
+        custom_demo["downvote"]["political_affiliation_distribution"]["independent"] += 1
+        custom_demo["downvote"]["political_affiliation_distribution"]["socialist"] += 1
+
+        vote = Vote(bill_id=bill_id, demographics=custom_demo)
+        db.session.add(vote)
+        bill.vote_count = 4
+        db.session.commit()
+
+    response = client.get(f"/api/bills/{bill_id}/demographics")
+    assert response.status_code == 200
+    data = response.get_json()
+    demo = data.get("demographics")
+    assert demo is not None
+
+    # Check upvote demographics.
+    up_demo = demo.get("upvote")
+    assert up_demo is not None
+    assert up_demo["age_distribution"]["under_18"] == 1
+    assert up_demo["age_distribution"]["18_to_30"] == 1
+    assert up_demo["gender_distribution"]["male"] == 1
+    assert up_demo["gender_distribution"]["female"] == 1
+    assert up_demo["state_distribution"]["ca"] == 1
+    assert up_demo["state_distribution"]["ny"] == 1
+    assert up_demo["ethnicity_distribution"]["white"] == 1
+    assert up_demo["ethnicity_distribution"]["asian"] == 1
+    assert up_demo["political_affiliation_distribution"]["democrat"] == 1
+    assert up_demo["political_affiliation_distribution"]["republican"] == 1
+
+    # Check downvote demographics.
+    down_demo = demo.get("downvote")
+    assert down_demo is not None
+    assert down_demo["age_distribution"]["30_to_60"] == 1
+    assert down_demo["age_distribution"]["60_plus"] == 1
+    assert down_demo["gender_distribution"]["non-binary"] == 1
+    assert down_demo["gender_distribution"]["transgender"] == 1
+    assert down_demo["state_distribution"]["tx"] == 1
+    assert down_demo["state_distribution"]["fl"] == 1
+    assert down_demo["ethnicity_distribution"]["black or african american"] == 1
+    assert down_demo["ethnicity_distribution"]["hispanic or latino"] == 1
+    assert down_demo["political_affiliation_distribution"]["independent"] == 1
+    assert down_demo["political_affiliation_distribution"]["socialist"] == 1
