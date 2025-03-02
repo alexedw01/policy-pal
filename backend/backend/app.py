@@ -19,7 +19,7 @@ import click
 
 from flask import Flask, jsonify, request
 from flask_sqlalchemy import SQLAlchemy  
-from sqlalchemy import or_
+from sqlalchemy import or_, text
 from sqlalchemy.ext.mutable import MutableDict
 from flask_cors import CORS
 from flask.cli import with_appcontext
@@ -28,6 +28,9 @@ from flask_jwt_extended import JWTManager, create_access_token, jwt_required, ge
 from dotenv import load_dotenv
 from apscheduler.schedulers.background import BackgroundScheduler
 from werkzeug.security import generate_password_hash, check_password_hash
+
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.metrics.pairwise import cosine_similarity
 
 # ------------------------------------------------------------------------------
 # Application and Configuration
@@ -145,6 +148,34 @@ class Bill(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.now(timezone.utc))
     updated_at = db.Column(db.DateTime, onupdate=datetime.now(timezone.utc))
 
+class BillSearchEntry(db.Model):
+    __tablename__ = "bill_search_entries"
+    id = db.Column(db.Integer, primary_key=True)
+    bill_id = db.Column(db.Integer, db.ForeignKey("bills.id"), unique=True, nullable=False)
+    combined_text = db.Column(db.Text, nullable=False)
+
+def build_bill_search_entries():
+    bills = Bill.query.all()
+    for bill in bills:
+        parts = []
+        if bill.title:
+            parts.append(bill.title)
+        if bill.ai_summary:
+            parts.append(bill.ai_summary)
+        if bill.full_text:
+            parts.append(bill.full_text)
+        # Combine the three fields into one document.
+        combined_text = " ".join(parts)
+        
+        entry = BillSearchEntry.query.filter_by(bill_id=bill.id).first()
+        if not entry:
+            entry = BillSearchEntry(bill_id=bill.id, combined_text=combined_text)
+            db.session.add(entry)
+        else:
+            entry.combined_text = combined_text
+    db.session.commit()
+
+
 def default_demographics():
     return {
         "upvote": {
@@ -224,7 +255,7 @@ class ScrapeTracking(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     type = db.Column(db.String(50), unique=True, nullable=False)
     offset = db.Column(db.Integer, default=0)
-
+    
 # ------------------------------------------------------------------------------
 # Scraper Class
 # ------------------------------------------------------------------------------
@@ -602,7 +633,8 @@ def scrape_bills(congress: int, offset: int, limit: int) -> None:
     """
     Scrape bills from the specified Congress session.
 
-    This command performs a batch scrape of legislative bills using the provided parameters.
+    This command performs a batch scrape of legislative bills using the provided parameters,
+    and then updates the BillSearchEntry records used for TF–IDF search.
     
     :param congress: Congress number to scrape (default is 118).
     :param offset: Starting offset for the scraping (default is 0).
@@ -612,6 +644,10 @@ def scrape_bills(congress: int, offset: int, limit: int) -> None:
     processed, total, available = scraper.batch_scrape(congress=congress, offset=offset, limit=limit)
     click.echo(f"Scraping complete: Processed {processed} new bills out of {total} fetched bills.")
     click.echo(f"Total bills available: {available}")
+
+    click.echo("Updating BillSearchEntry records for search...")
+    build_bill_search_entries()
+    click.echo("BillSearchEntry records updated.")
 
 @app.cli.command("schedule-updates")
 @with_appcontext
@@ -634,15 +670,20 @@ def init_scheduler() -> None:
 def reset_db() -> None:
     """
     Reset the database by dropping and recreating all tables.
-
-    This command drops all existing database tables and recreates them, effectively
-    resetting the database state.
+    
+    This command drops the public schema (with CASCADE) and then recreates it, 
+    ensuring that all dependent objects are removed.
     """
-    db.drop_all()
+    # Drop the entire public schema (with cascade) and then recreate it.
+    db.session.execute(text("DROP SCHEMA public CASCADE;"))
+    db.session.execute(text("CREATE SCHEMA public;"))
+    db.session.commit()
+
+    # Create all tables from the models.
     db.create_all()
     db.session.commit()
+    
     click.echo("Database reset complete.")
-
 # ------------------------------------------------------------------------------
 # User API Endpoints
 # ------------------------------------------------------------------------------
@@ -936,6 +977,57 @@ def search_bills():
         app.logger.error(f"Error in search: {e}")
         return jsonify({"error": str(e)}), 500
     
+@app.route("/api/search_tfidf", methods=["GET"])
+def search_bills_tfidf():
+    """
+    API endpoint to search bills using TF–IDF to rank documents based on relevance.
+    
+    Query Parameters:
+        keyword (str): The search keyword to look for in the bill's title, AI summary, and text preview.
+        
+    Returns:
+        JSON response containing a list of serialized bills matching the search criteria.
+    """
+    try:
+        keyword = request.args.get("keyword", "").strip()
+        if not keyword:
+            return jsonify([])
+
+        # Retrieve the prebuilt search entries.
+        entries = BillSearchEntry.query.all()
+        if not entries:
+            return jsonify([])
+
+        documents = [entry.combined_text for entry in entries]
+        bill_ids = [entry.bill_id for entry in entries]
+
+        # Initialize the vectorizer and compute the TF–IDF matrix.
+        vectorizer = TfidfVectorizer(stop_words="english")
+        tfidf_matrix = vectorizer.fit_transform(documents)
+        
+        # Transform the query into the TF–IDF vector space.
+        query_vec = vectorizer.transform([keyword])
+        
+        # Compute cosine similarities.
+        similarities = cosine_similarity(query_vec, tfidf_matrix).flatten()
+        
+        # Sort indices by similarity (highest first) and filter to include only positive matches.
+        sorted_indices = similarities.argsort()[::-1]
+        top_indices = [i for i in sorted_indices if similarities[i] > 0][:20]
+
+        # Build a list of serialized bills in order of relevance.
+        bills = []
+        for idx in top_indices:
+            bill = db.session.get(Bill, bill_ids[idx])
+            if bill:
+                bills.append(serialize_bill(bill))
+        
+        return jsonify(bills)
+    
+    except Exception as e:
+        app.logger.error("Error in TF–IDF search: %s", e, exc_info=True)
+        return jsonify({"error": "An error occurred during search."}), 500
+
 @app.route("/api/bills/<int:bill_id>/vote", methods=["POST"])
 @jwt_required()
 def vote_on_bill(bill_id):

@@ -1,7 +1,7 @@
 import { Bill } from '@/types/bill';
 
 //const API_BASE = process.env.NEXT_PUBLIC_API_URL;
-const API_BASE = "http://localhost:8080/api";
+const API_BASE = "http://127.0.0.1:8080/api";
 
 export async function getBills(): Promise<Bill[]> {
   const response = await fetch(`${API_BASE}/bills`);

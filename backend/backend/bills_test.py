@@ -232,6 +232,22 @@ def test_search_bills(client):
     assert isinstance(data, list)
     assert any("Test Bill One" in bill["title"] for bill in data)
 
+def test_search_tfidf(client):
+    """
+    Test that the /api/search_tfidf endpoint returns bills matching the provided keyword
+    using TF–IDF over full_text, ai_summary, and title.
+    """
+    # Import and build the search index from the combined fields.
+    from backend.app import build_bill_search_entries
+    with app.app_context():
+        build_bill_search_entries()
+    response = client.get("/api/search_tfidf", query_string={"keyword": "Test Bill One"})
+    assert response.status_code == 200
+    data = response.get_json()
+    assert isinstance(data, list)
+    # Verify that the bill with "Test Bill One" in the title is returned.
+    assert any("Test Bill One" in bill["title"] for bill in data)
+
 def test_vote_bill_upvote(client, registered_users):
     """
     Test adding an upvote to a bill with no prior vote from the user.
