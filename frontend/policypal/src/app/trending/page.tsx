@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { getTrendingBills } from "@/lib/api";
 import BillCard from "@/components/BillCard";
 import { Bill } from "@/types/bill";
-import Navbar from '@/components/Navbar';
+//import Navbar from '@/components/Navbar';
 import LoadingBills from '@/components/LoadingBills';
 
 export default function TrendingPage() {

@@ -1,5 +1,6 @@
 'use client';
 import { useSearchParams } from 'next/navigation';
+import { Suspense } from 'react'
 import { useEffect, useState } from 'react';
 import { searchBills } from '@/lib/api';
 import BillCard from '@/components/BillCard';
@@ -28,15 +29,17 @@ export default function SearchPage() {
   if (loading) return <div>Loading...</div>;
 
   return (
-    <div className="max-w-4xl mx-auto px-4">
-      <h1 className="text-3xl font-bold mb-8">
-        Search Results for "{keyword}"
-      </h1>
-      <div className="space-y-6">
-        {bills.map((bill) => (
-          <BillCard key={bill._id} bill={bill} />
-        ))}
+    <Suspense>
+      <div className="max-w-4xl mx-auto px-4">
+          <h1 className="text-3xl font-bold mb-8">
+              Search Results for &#34;{keyword}&#34;
+          </h1>
+        <div className="space-y-6">
+          {bills.map((bill) => (
+            <BillCard key={bill._id} bill={bill} />
+          ))}
+        </div>
       </div>
-    </div>
+    </Suspense>
   );
 }

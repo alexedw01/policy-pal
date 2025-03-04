@@ -15,7 +15,6 @@ export default function Navbar() {
   return (
     <nav className="relative flex items-center justify-between p-4 bg-blue-600">
       <div className="flex items-center space-x-4">
-        {/* Hamburger button visible on mobile, now on the left */}
         <button
           className="md:hidden text-white focus:outline-none"
           onClick={toggleMenu}
@@ -37,13 +36,12 @@ export default function Navbar() {
         <Link href="/" className="text-2xl font-bold text-white">
           Policy Pal
         </Link>
-        {/* Full menu visible on medium screens and up */}
         <div className="hidden md:flex space-x-6">
           <Link 
-            href="/"
-            className={`text-white hover:text-blue-200 ${pathname === '/' ? 'text-blue-200' : ''}`}
+            href="/search-adv"
+            className={`text-white hover:text-blue-200 ${pathname === '/search-adv' ? 'text-blue-200' : ''}`}
           >
-            Home
+            Advanced Search
           </Link>
           <Link 
             href="/trending"

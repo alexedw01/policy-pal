@@ -1,6 +1,6 @@
 'use client';
 import React from 'react';
-import Navbar from '@/components/Navbar';
+//import Navbar from '@/components/Navbar';
 import Image from 'next/image';
 
 export default function AboutPage() {
@@ -11,7 +11,7 @@ export default function AboutPage() {
           <h1 className="text-3xl font-bold text-black mb-4">About Policy Pal</h1>
           <p className="mt-4 text-black">
             Hello! Our goal here at Policy Pal is to make the legislative branch of government a little more transparent,
-            so that everyone is able to easily keep up with politics! We believe it's important to stay informed, and even better
+            so that everyone is able to easily keep up with politics! We believe it&#39;s important to stay informed, and even better
             for American citizens to be able to understand what their local representatives are actually doing when they become elected.
           </p>
           <br/>
@@ -27,21 +27,21 @@ export default function AboutPage() {
             <ul className="list-disc ml-6 text-black">
 
                     <li>435 members</li>
-                    <li>Seats are allocated based on each state's population</li>
+                    <li>Seats are allocated based on each state&#39;s population</li>
             </ul>
             <p className="mt-4 text-black">
                 <strong>Senate: </strong>
             </p>
             <ul className="list-disc ml-6 text-black">
                 <li>100 members</li>
-                <li>Seats are allocated based on each state's population</li>
+                <li>Seats are allocated based on each state&#39;s population</li>
             </ul>
             
             <p className="mt-4 text-black">
-            Congress additionally holds 'the power of the purse', which means they decide how American tax dollars are spent. This is a lot of power! 
+            Congress additionally holds &#39;the power of the purse&#39;, which means they decide how American tax dollars are spent. This is a lot of power! 
             
-            That's why for any bill to pass, it needs to pass through two houses each containing representatives of the American states.
-            The House of Representatives and Senate are collectively referred to as "Congress". 
+            That&#39;s why for any bill to pass, it needs to pass through two houses each containing representatives of the American states.
+            The House of Representatives and Senate are collectively referred to as &#34;Congress&#34;. 
           </p>
           <div className="my-6">
             <Image
@@ -54,8 +54,8 @@ export default function AboutPage() {
           </div>
           <br/>
           <p className="mt-4 text-black">
-            As you can see above, this is a complicated process! It's a long time before bills become laws, but by voting for representatives 
-            with similar values to your own, contacting them (phone, email, etc) to have them vote on bills you're passionate about, and participating
+            As you can see above, this is a complicated process! It&#39;s a long time before bills become laws, but by voting for representatives 
+            with similar values to your own, contacting them (phone, email, etc) to have them vote on bills you&#39;re passionate about, and participating
             in local government will let you personally help America grow the way that you want it to. 
           </p>
           <br/>
@@ -82,7 +82,7 @@ export default function AboutPage() {
             />
           </div>
           <br/>
-          <h3 className="text-2xl font-bold text-black-900 mb-4">Wait, Executive Orders aren't Laws?</h3>
+          <h3 className="text-2xl font-bold text-black-900 mb-4">Wait, Executive Orders aren&#39;t Laws?</h3>
           <p className="mt-4 text-black">
             From the <a href="https://www.aclu.org/news/privacy-technology/what-is-an-executive-order-and-how-does-it-work"
                className="text-blue-500 underline hover:text-blue-700">American Civil Liberties Union</a>:
@@ -90,17 +90,17 @@ export default function AboutPage() {
             <blockquote className="bg-gray-100 border-l-4 border-blue-500 pl-4 py-2 italic my-8">
                 <p>
   
-            "Article II of the Constitution vests the president with executive power over the government, including the obligation to 
-            “take care that the laws be faithfully executed.” An executive order is a written directive, signed by the president, 
-            that orders the government to take specific actions to ensure “the laws be faithfully executed.” It might mean telling 
+            &#34;Article II of the Constitution vests the president with executive power over the government, including the obligation to 
+            &#34;take care that the laws be faithfully executed.&#34; An executive order is a written directive, signed by the president, 
+            that orders the government to take specific actions to ensure &#34;the laws be faithfully executed.&#34; It might mean telling 
             the Department of Education to implement a certain rule, or declaring a new policy priority. Executive orders, however, 
             cannot override federal laws and statutes.
                 <br/>
                 ...
                 <br/>
-            With an executive order, the president can’t write a new statute, but an order can tell federal agencies how to implement 
+            With an executive order, the president can&#39;t write a new statute, but an order can tell federal agencies how to implement 
             a statute. For example, Congress can declare a certain drug legal or illegal. But with an executive order, the president 
-            can tell the Department of Justice if prosecuting certain drug cases is a priority or not."
+            can tell the Department of Justice if prosecuting certain drug cases is a priority or not.&#34;
             <br/>
             </p>
             <footer className="mt-2 text-right">— ACLU</footer>
@@ -112,7 +112,7 @@ export default function AboutPage() {
             Thanks so much for checking us out! If you have any other questions about the US government, check{' '}
             <a href="https://www.youtube.com/watch?v=lrk4oY7UxpQ&list=PL8dPuuaLjXtOfse2ncvffeelTrqvhrz8H"
                className="text-blue-500 underline hover:text-blue-700">here</a>,
-            and if there's bugs or have ideas for additional features, feel free to reach out{' '} 
+            and if there&#39;s bugs or have ideas for additional features, feel free to reach out{' '} 
             <a href="https://screamintothevoid.com/" className="text-blue-500 underline hover:text-blue-700">here</a>!
           </p>
         </div>
