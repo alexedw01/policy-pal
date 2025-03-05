@@ -716,14 +716,13 @@ def register():
     if not (1 < age < 100): 
         return jsonify({"error": "Given age is invalid"}), 400
     
-    acceptable_genders = ["male", "female", "non-binary", "transgender", "transgender", "other"]
+    acceptable_genders = ["male", "female", "non-binary", "transgender", "other"]
     if gender.lower() not in acceptable_genders:
         return jsonify({"error": "Given gender is invalid"}), 400
     
     acceptable_ethnicities = ["hispanic or latino", "white", "black or african american", "asian", 
-                            "native hawaiian or other pacific islander", "american indian or alaska native"]
+                            "native hawaiian or other pacific islander", "american indian or alaska native", "other"]
 
-    
     if ethnicity.lower() not in acceptable_ethnicities:
         return jsonify({"error": "Given ethnicity is invalid"}), 400
 
@@ -744,13 +743,13 @@ def register():
     state = state.lower()
 
     if state in acceptable_states.keys():
-        state = acceptable_states[state]  # Convert full name to abbreviation
+        state = acceptable_states[state]
     elif state not in acceptable_states.values():
         return jsonify({"error": "Given state is invalid"}), 400
     
     acceptable_political_affiliations = [
-        "democrat", "republican", "independent", "libertarian", "green", "conservative", "progressive", 
-        "moderate", "socialist", "communist", "other"
+        "libertarian", "conservative", "progressive", "moderate", 
+        "socialist", "communist", "other"
     ]
     
     if political_affiliation.lower() not in acceptable_political_affiliations:
