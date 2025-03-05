@@ -111,7 +111,7 @@ export default function FullBillView({ billId }: FullBillViewProps) {
               </pre>
             </div>
             <p className="mt-4 text-sm text-gray-600 italic">
-              * This is a preview. Click "View on Congress.gov" for the full text.
+              * This is a preview. Click &#34;View on Congress.gov&#34; for the full text.
             </p>
           </div>
         ) : null}

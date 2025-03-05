@@ -2,9 +2,9 @@
 import { useState, useEffect } from 'react';
 import { getBills } from '@/lib/api';
 import BillCard from '@/components/BillCard';
-import Navbar from '@/components/Navbar';
+//import Navbar from '@/components/Navbar';
 import { Bill } from '@/types/bill';
-import { useUser } from '@/contexts/UserContext';
+//import { useUser } from '@/contexts/UserContext';
 
 export default function Home() {
   const [bills, setBills] = useState<Bill[]>([]);
@@ -14,10 +14,11 @@ export default function Home() {
   const [totalPages, setTotalPages] = useState(0);
   const [chamber, setChamber] = useState('all');
   const [sortBy, setSortBy] = useState('newest');
-  const { user } = useUser();
+  // const { user } = useUser();
 
   useEffect(() => {
     fetchBills();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page, chamber, sortBy]);
 
   const fetchBills = async () => {
@@ -59,6 +60,7 @@ export default function Home() {
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-3xl font-bold text-gray-900">Latest Bills</h1>
           <div className="flex gap-4">
+            
             <select
               value={chamber}
               onChange={(e) => setChamber(e.target.value)}

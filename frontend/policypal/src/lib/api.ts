@@ -3,11 +3,32 @@ import { Bill } from '@/types/bill';
 //const API_BASE = process.env.NEXT_PUBLIC_API_URL;
 const API_BASE = "http://127.0.0.1:8080/api";
 
+/*
 export async function getBills(): Promise<Bill[]> {
   const response = await fetch(`${API_BASE}/bills`);
   if (!response.ok) throw new Error('Failed to fetch bills');
   return response.json();
 }
+*/
+
+export async function getBills({
+  page = 1,
+  per_page = 10,
+  chamber,
+  sort,
+}: {
+  page?: number;
+  per_page?: number;
+  chamber?: string;
+  sort?: string;
+}): Promise<{ bills: Bill[]; pagination: { pages: number } }> {
+  const response = await fetch(
+    `${API_BASE}/bills?page=${page}&per_page=${per_page}&chamber=${chamber}&sort=${sort}`
+  );
+  if (!response.ok) throw new Error("Failed to fetch bills");
+  return response.json();
+}
+
 
 export async function getTrendingBills(): Promise<Bill[]> {
   const response = await fetch(`${API_BASE}/bills/trending`);
@@ -18,6 +39,12 @@ export async function getTrendingBills(): Promise<Bill[]> {
 export async function searchBills(keyword: string): Promise<Bill[]> {
   const response = await fetch(`${API_BASE}/search?keyword=${encodeURIComponent(keyword)}`);
   if (!response.ok) throw new Error('Failed to search bills');
+  return response.json();
+}
+
+export async function searchBillsByRelevancy(keyword: string): Promise<Bill[]> {
+  const response = await fetch(`${API_BASE}/search_tfidf?keyword=${encodeURIComponent(keyword)}`);
+  if (!response.ok) throw new Error('Failed to advanced search bills');
   return response.json();
 }
 
