@@ -77,3 +77,9 @@ export async function testConnection() {
     return false;
   }
 }
+
+export async function getBillDemographics(billId: number): Promise<{ bill_id: number; demographics: any }> {
+  const response = await fetch(`${API_BASE}/bills/${billId}/demographics`);
+  if (!response.ok) throw new Error('Failed to fetch bill demographics');
+  return response.json();
+}

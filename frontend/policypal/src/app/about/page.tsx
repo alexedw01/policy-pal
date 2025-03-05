@@ -4,7 +4,9 @@ import React from 'react';
 import Image from 'next/image';
 
 export default function AboutPage() {
-  return (
+
+
+  return (<>
     <div className="min-h-screen bg-gray-50">
       <main className="container mx-auto px-4 py-8">
         <div className="max-w-4xl mx-auto">
@@ -118,5 +120,6 @@ export default function AboutPage() {
         </div>
       </main>
     </div>
-  );
+
+  </>);
 }
