@@ -17,5 +17,6 @@ export interface Bill {
     full_text?: string; 
     ai_summary?: string;
     upvote_count: number;
+    downvote_count: number;
     created_at: string;
 }

@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { Bill } from '@/types/bill';
+import VoteButton from './VoteButton';
 
 interface FullBillViewProps {
   billId: string;
@@ -78,8 +79,12 @@ export default function FullBillView({ billId }: FullBillViewProps) {
               </p>
             </div>
             <div>
-              <h3 className="text-lg font-semibold mb-2 text-gray-900">Status</h3>
+            <div className="flex items-center space-x-4">
+                <h3 className="text-lg font-semibold mb-2 text-gray-900">Status</h3>
+                <VoteButton billId={bill._id} initialUpvotes={bill.upvote_count} initialDownvotes={bill.downvote_count} />
+              </div>
               <p className="text-gray-700">Upvotes: {bill.upvote_count}</p>
+              <p className="text-gray-700">Downvotes: {bill.downvote_count}</p>
             </div>
           </div>
         </div>
