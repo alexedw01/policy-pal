@@ -16,7 +16,7 @@ export interface Bill {
     text_preview?: string;
     full_text?: string; 
     ai_summary?: string;
-    upvote_count: number;
-    downvote_count: number;
+    vote_count: number;
     created_at: string;
+    user_vote_status?: 'upvote' | 'downvote' | 'none';
 }
