@@ -96,3 +96,5 @@ export async function getBillDemographics(billId: number): Promise<{ bill_id: nu
   if (!response.ok) throw new Error('Failed to fetch bill demographics');
   return response.json();
 }
+
+

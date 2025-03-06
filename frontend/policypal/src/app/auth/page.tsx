@@ -123,7 +123,7 @@ export default function AuthPage() {
                       onChange={(e) => setGender(e.target.value)}
                       className="block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500"
                     >
-                      <option value="">Select your gender</option>
+                      <option value="">Select your Gender</option>
                       <option value="male">Male</option>
                       <option value="female">Female</option>
                       <option value="non-binary">Non-binary</option>
@@ -160,18 +160,18 @@ export default function AuthPage() {
 
                 <div>
                   <label htmlFor="state" className="block text-sm font-medium text-gray-700">
-                    Ethnicity
+                    State
                   </label>
                   <div className="mt-1">
                     <select
                       id="state"
                       name="state"
                       required
-                      value={ethnicity}
+                      value={state}
                       onChange={(e) => setPlace(e.target.value)}
                       className="block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500"
                     >
-                      <option value="">Select your state</option> 
+                      <option value="">Select your State</option> 
                       <option value="alabama">Alabama</option> 
                       <option value="alaska">Alaska</option> 
                       <option value="arizona">Arizona</option> 
@@ -222,6 +222,7 @@ export default function AuthPage() {
                       <option value="west virginia">West Virginia</option> 
                       <option value="wisconsin">Wisconsin</option> 
                       <option value="wyoming">Wyoming</option>
+                      <option value="other">Other</option>
                     </select>
                   </div>
                 </div>
@@ -256,7 +257,7 @@ export default function AuthPage() {
 
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                Email address
+                Email Address
               </label>
               <div className="mt-1">
                 <input
