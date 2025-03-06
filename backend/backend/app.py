@@ -690,18 +690,16 @@ def reset_db() -> None:
 
 @app.route("/api/auth/register", methods=["POST"])
 def register():
-    """
-    API endpoint to register a new user and automatically log them in.
-
-    Expects a JSON payload with 'email', 'username', and 'password'.
-    Returns an access token along with a success message and user details upon user creation.
-    """
     data = request.get_json()
     email = data.get("email")
     username = data.get("username")
     password = data.get("password")
     
-    age = data.get("age")
+    try:
+        age = int(data.get("age"))
+    except (ValueError, TypeError):
+        return jsonify({"error": "Invalid age format"}), 400 
+
     gender = data.get("gender")
     ethnicity = data.get("ethnicity")
     state = data.get("state")
@@ -712,14 +710,14 @@ def register():
     
     if User.query.filter(or_(User.email == email, User.username == username)).first():
         return jsonify({"error": "User with given email or username already exists"}), 400
-    
-    if not (1 < age < 100): 
+
+    if not (1 < age < 100):
         return jsonify({"error": "Given age is invalid"}), 400
     
     acceptable_genders = ["male", "female", "non-binary", "transgender", "other"]
     if gender.lower() not in acceptable_genders:
         return jsonify({"error": "Given gender is invalid"}), 400
-    
+
     acceptable_ethnicities = ["hispanic or latino", "white", "black or african american", "asian", 
                             "native hawaiian or other pacific islander", "american indian or alaska native", "other"]
 
@@ -741,7 +739,6 @@ def register():
     }
 
     state = state.lower()
-
     if state in acceptable_states.keys():
         state = acceptable_states[state]
     elif state not in acceptable_states.values():
