@@ -1,45 +1,73 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useUser } from '@/contexts/UserContext';
 import { voteBill } from '@/lib/api';
 
 interface VoteButtonProps {
   billId: string;
-  initialVoteStatus: 'upvote' | 'downvote' | 'none';
+  upvoteCount?: number;
+  downvoteCount?: number;
+  initialVoteStatus?: 'upvote' | 'downvote' | 'none';
 }
 
-export default function VoteButton({ billId, initialVoteStatus }: VoteButtonProps) {
-  const [voteStatus, setVoteStatus] = useState(initialVoteStatus);
+export default function VoteButton({ 
+  billId, 
+  upvoteCount = 0, 
+  downvoteCount = 0,
+  initialVoteStatus = 'none' 
+}: VoteButtonProps) {
+  const [isLoading, setIsLoading] = useState(false);
   const { user } = useUser();
   const router = useRouter();
 
-  useEffect(() => {
-    // Check if the user has already voted on this bill
-    // This logic depends on how you store the user's votes
-  }, [billId, user]);
+  const getUserVoteStatus = () => {
+    if (!user) return 'none';
+    try {
+      const votedBills = JSON.parse(localStorage.getItem('votedBills') || '{}');
+      return votedBills[billId] || initialVoteStatus;
+    } catch {
+      return initialVoteStatus;
+    }
+  };
 
-  const handleVote = async (voteType: 'upvote' | 'downvote' | 'none') => {
+  const userVoteStatus = getUserVoteStatus();
+
+  const handleVote = async (voteType: 'upvote' | 'downvote') => {
     if (!user) {
       router.push('/auth');
       return;
     }
 
+    const newVoteStatus = userVoteStatus === voteType ? 'none' : voteType;
+    
+    setIsLoading(true);
+    
     try {
-      await voteBill(billId, voteType);
-      setVoteStatus(voteType);
+      await voteBill(billId, newVoteStatus);
+      
+      const votedBills = JSON.parse(localStorage.getItem('votedBills') || '{}');
+      if (newVoteStatus === 'none') {
+        delete votedBills[billId];
+      } else {
+        votedBills[billId] = newVoteStatus;
+      }
+      localStorage.setItem('votedBills', JSON.stringify(votedBills));
+      
+      window.location.reload();
     } catch (error) {
-      console.error(`Failed to ${voteType}:`, error);
+      console.error('Error voting:', error);
+      setIsLoading(false);
     }
   };
 
   return (
-    <div className="flex space-x-2">
+    <div className="flex items-center space-x-2">
       <button
         onClick={() => handleVote('upvote')}
-        disabled={voteStatus === 'upvote' || !user}
+        disabled={isLoading || !user}
         className={`flex items-center space-x-1 px-3 py-1 rounded-full transition-colors ${
-          voteStatus === 'upvote'
-            ? 'bg-blue-600 text-white'
+          userVoteStatus === 'upvote'
+            ? 'bg-blue-500 text-white' 
             : user 
               ? 'bg-blue-50 text-blue-600 hover:bg-blue-100'
               : 'bg-gray-100 text-gray-400 cursor-not-allowed'
@@ -47,13 +75,15 @@ export default function VoteButton({ billId, initialVoteStatus }: VoteButtonProp
         title={!user ? 'Login to upvote' : undefined}
       >
         <span className="text-lg">↑</span>
+        <span className="ml-1">{upvoteCount}</span>
       </button>
+
       <button
         onClick={() => handleVote('downvote')}
-        disabled={voteStatus === 'downvote' || !user}
+        disabled={isLoading || !user}
         className={`flex items-center space-x-1 px-3 py-1 rounded-full transition-colors ${
-          voteStatus === 'downvote'
-            ? 'bg-red-600 text-white'
+          userVoteStatus === 'downvote'
+            ? 'bg-red-500 text-white' 
             : user 
               ? 'bg-red-50 text-red-600 hover:bg-red-100'
               : 'bg-gray-100 text-gray-400 cursor-not-allowed'
@@ -61,15 +91,8 @@ export default function VoteButton({ billId, initialVoteStatus }: VoteButtonProp
         title={!user ? 'Login to downvote' : undefined}
       >
         <span className="text-lg">↓</span>
+        <span className="ml-1">{downvoteCount}</span>
       </button>
-      {voteStatus !== 'none' && (
-        <button
-          onClick={() => handleVote('none')}
-          className="flex items-center space-x-1 px-3 py-1 rounded-full bg-gray-200 text-gray-600 hover:bg-gray-300"
-        >
-          <span className="text-lg">✕</span>
-        </button>
-      )}
     </div>
   );
 }

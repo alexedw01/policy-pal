@@ -49,8 +49,7 @@ export default function AuthPage() {
         setUser(data.user); 
       }
       
-      router.push('/');
-      router.refresh();
+window.location.href = '/';
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Authentication failed');
     }

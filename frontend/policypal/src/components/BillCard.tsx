@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Bill } from '@/types/bill';
 import { useUser } from '@/contexts/UserContext';
 import { formatDistanceToNow } from 'date-fns';
-import VoteButton from './VoteButton';
+import VoteButton from '@/components/VoteButton';
 
 interface BillCardProps {
   bill: Bill;
@@ -37,7 +37,12 @@ export default function BillCard({ bill }: BillCardProps) {
             </div>
           </div>
 
-          <VoteButton billId={bill._id} initialVoteStatus={bill.user_vote_status || 'none'} />
+          <VoteButton 
+            billId={bill._id} 
+            upvoteCount={bill.upvote_count || 0}
+            downvoteCount={bill.downvote_count || 0}
+            initialVoteStatus={bill.user_vote_status || 'none'}
+          />
         </div> 
 
         {bill.ai_summary && (

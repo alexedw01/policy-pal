@@ -145,6 +145,8 @@ class Bill(db.Model):
     full_text = db.Column(db.Text)
     ai_summary = db.Column(db.Text)
     vote_count = db.Column(db.Integer, nullable=False, default=0)
+    upvote_count = db.Column(db.Integer, nullable=False, default=0) 
+    downvote_count = db.Column(db.Integer, nullable=False, default=0)
     created_at = db.Column(db.DateTime, default=datetime.now(timezone.utc))
     updated_at = db.Column(db.DateTime, onupdate=datetime.now(timezone.utc))
 
@@ -240,7 +242,7 @@ class Vote(db.Model):
     """
     __tablename__ = "votes"
     bill_id = db.Column(db.Integer, db.ForeignKey("bills.id"), primary_key=True)
-    demographics = db.Column(db.JSON, nullable=False, default=default_demographics)
+    demographics = db.Column(MutableDict.as_mutable(db.JSON), nullable=False, default=default_demographics)
 
 class ScrapeTracking(db.Model):
     """
@@ -850,6 +852,8 @@ def serialize_bill(bill):
         "full_text": bill.full_text,
         "ai_summary": bill.ai_summary,
         "vote_count": bill.vote_count if hasattr(bill, 'vote_count') else 0,
+        "upvote_count": bill.upvote_count if hasattr(bill, 'upvote_count') else 0,
+        "downvote_count": bill.downvote_count if hasattr(bill, 'downvote_count') else 0,
         "created_at": bill.created_at.isoformat() if bill.created_at else None,
         "updated_at": bill.updated_at.isoformat() if bill.updated_at else None
     }
@@ -1118,7 +1122,13 @@ def vote_on_bill(bill_id):
             demo["political_affiliation_distribution"][political_affiliation] = demo["political_affiliation_distribution"].get(political_affiliation, 0) + 1
             vote_record.demographics[vote_status] = demo
 
-            bill.vote_count += 1
+        
+            if vote_status == "upvote":
+                bill.upvote_count += 1
+                bill.vote_count +=1
+            if vote_status == "downvote":
+                bill.downvote_count += 1
+                bill.vote_count += 1
             user.voted_bills[str(bill_id)] = vote_status
 
         # CASE 2: User has already voted on this bill.
@@ -1134,6 +1144,10 @@ def vote_on_bill(bill_id):
                 vote_record.demographics[previous_vote] = old_demo
 
                 bill.vote_count = max(bill.vote_count - 1, 0)
+                if previous_vote == "upvote":
+                    bill.upvote_count = max(bill.upvote_count - 1, 0)
+                elif previous_vote == "downvote":
+                    bill.downvote_count = max(bill.downvote_count - 1, 0)
                 if str(bill_id) in user.voted_bills:
                     del user.voted_bills[str(bill_id)]
 
@@ -1160,6 +1174,13 @@ def vote_on_bill(bill_id):
                 new_demo["political_affiliation_distribution"][political_affiliation] = new_demo["political_affiliation_distribution"].get(political_affiliation, 0) + 1
                 vote_record.demographics[vote_status] = new_demo
 
+                if previous_vote == "upvote":
+                    bill.upvote_count = max(bill.upvote_count - 1, 0)
+                    bill.downvote_count += 1
+                elif previous_vote == "downvote":
+                    bill.downvote_count = max(bill.downvote_count - 1, 0)
+                    bill.upvote_count += 1
+
                 # Update the user's vote to the new status.
                 user.voted_bills[str(bill_id)] = vote_status
 
@@ -1169,11 +1190,13 @@ def vote_on_bill(bill_id):
             "vote": {
                 "bill_id": bill_id,
                 "vote_status": vote_status,
-                "demographics": vote_record.demographics,
+                "demographics": vote_record.demographics
             },
             "bill": {
                 "id": bill.id,
-                "vote_count": bill.vote_count
+                "vote_count": bill.vote_count,
+                "upvote_count": bill.upvote_count,
+                "downvote_count": bill.downvote_count
             }
         }), 200
 
