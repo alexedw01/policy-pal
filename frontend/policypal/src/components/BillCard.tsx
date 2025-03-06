@@ -4,21 +4,22 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Bill } from '@/types/bill';
 import { useUser } from '@/contexts/UserContext';
-import { upvoteBill } from '@/lib/api';
+// import { upvoteBill } from '@/lib/api';
 import { formatDistanceToNow } from 'date-fns';
+import VoteButton from './VoteButton';
 
 interface BillCardProps {
   bill: Bill;
 }
 
 export default function BillCard({ bill }: BillCardProps) {
-  const [upvotes, setUpvotes] = useState(bill.upvote_count);
-  const [hasUpvoted, setHasUpvoted] = useState(false);
+ // const [upvotes, setUpvotes] = useState(bill.upvote_count);
+ // const [hasUpvoted, setHasUpvoted] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
   const { user } = useUser();
   const router = useRouter();
 
-  const handleUpvote = async () => {
+ /* const handleUpvote = async () => {
     if (!user) {
       router.push('/auth');
       return;
@@ -35,7 +36,7 @@ export default function BillCard({ bill }: BillCardProps) {
         console.error('Failed to upvote:', error);
       }
     }
-  };
+  }; */
 
   const handleViewFull = () => {
     router.push(`/bills/${bill._id}`);
@@ -58,22 +59,9 @@ export default function BillCard({ bill }: BillCardProps) {
             </div>
           </div>
 
-          <button
-            onClick={handleUpvote}
-            disabled={hasUpvoted || !user}
-            className={`ml-4 flex items-center space-x-1 px-3 py-1 rounded-full transition-colors ${
-              hasUpvoted
-                ? 'bg-gray-100 text-gray-500'
-                : user 
-                  ? 'bg-blue-50 text-blue-600 hover:bg-blue-100'
-                  : 'bg-gray-100 text-gray-400 cursor-not-allowed'
-            }`}
-            title={!user ? 'Login to upvote' : undefined}
-          >
-            <span className="text-lg">↑</span>
-            <span>{upvotes}</span>
-          </button>
-        </div>
+          
+          <VoteButton billId={bill._id} initialUpvotes={bill.upvote_count} initialDownvotes={bill.downvote_count} />
+        </div> 
 
         {bill.ai_summary && (
           <div className="mt-4">

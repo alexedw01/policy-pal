@@ -58,14 +58,27 @@ export async function getFullBill(billId: string): Promise<Bill> {
 }
 
 export async function upvoteBill(billId: string): Promise<void> {
-  const response = await fetch(`${API_BASE}/bills/${billId}/upvote`, {
+  const response = await fetch(`${API_BASE}/bills/${billId}/vote`, {
     method: 'POST',
     headers: {
       'Authorization': `Bearer ${localStorage.getItem('token')}`,
       'Content-Type': 'application/json'
-    }
+    },
+    body: JSON.stringify({ vote: 'upvote' })
   });
   if (!response.ok) throw new Error('Failed to upvote bill');
+}
+
+export async function downvoteBill(billId: string): Promise<void> {
+  const response = await fetch(`${API_BASE}/bills/${billId}/vote`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${localStorage.getItem('token')}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ vote: 'downvote' })
+  });
+  if (!response.ok) throw new Error('Failed to downvote bill');
 }
 
 export async function testConnection() {
