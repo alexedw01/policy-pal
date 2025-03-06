@@ -4,7 +4,6 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Bill } from '@/types/bill';
 import { useUser } from '@/contexts/UserContext';
-// import { upvoteBill } from '@/lib/api';
 import { formatDistanceToNow } from 'date-fns';
 import VoteButton from './VoteButton';
 
@@ -13,30 +12,9 @@ interface BillCardProps {
 }
 
 export default function BillCard({ bill }: BillCardProps) {
- // const [upvotes, setUpvotes] = useState(bill.upvote_count);
- // const [hasUpvoted, setHasUpvoted] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
   const { user } = useUser();
   const router = useRouter();
-
- /* const handleUpvote = async () => {
-    if (!user) {
-      router.push('/auth');
-      return;
-    }
-
-    try {
-      await upvoteBill(bill._id);
-      setUpvotes(prev => prev + 1);
-      setHasUpvoted(true);
-    } catch (error) {
-      if (error instanceof Error && error.message === 'Already voted') {
-        setHasUpvoted(true);
-      } else {
-        console.error('Failed to upvote:', error);
-      }
-    }
-  }; */
 
   const handleViewFull = () => {
     router.push(`/bills/${bill._id}`);
@@ -59,8 +37,7 @@ export default function BillCard({ bill }: BillCardProps) {
             </div>
           </div>
 
-          
-          <VoteButton billId={bill._id} initialUpvotes={bill.upvote_count} initialDownvotes={bill.downvote_count} />
+          <VoteButton billId={bill._id} initialVoteStatus={bill.user_vote_status || 'none'} />
         </div> 
 
         {bill.ai_summary && (

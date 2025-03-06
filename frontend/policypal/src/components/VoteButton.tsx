@@ -1,18 +1,15 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useUser } from '@/contexts/UserContext';
-import { upvoteBill, downvoteBill } from '@/lib/api';
+import { voteBill } from '@/lib/api';
 
 interface VoteButtonProps {
   billId: string;
-  initialUpvotes: number;
-  initialDownvotes: number;
+  initialVoteStatus: 'upvote' | 'downvote' | 'none';
 }
 
-export default function VoteButton({ billId, initialUpvotes, initialDownvotes }: VoteButtonProps) {
-  const [upvotes, setUpvotes] = useState(initialUpvotes);
-  const [downvotes, setDownvotes] = useState(initialDownvotes);
-  const [hasVoted, setHasVoted] = useState(false);
+export default function VoteButton({ billId, initialVoteStatus }: VoteButtonProps) {
+  const [voteStatus, setVoteStatus] = useState(initialVoteStatus);
   const { user } = useUser();
   const router = useRouter();
 
@@ -21,21 +18,15 @@ export default function VoteButton({ billId, initialUpvotes, initialDownvotes }:
     // This logic depends on how you store the user's votes
   }, [billId, user]);
 
-  const handleVote = async (voteType: 'upvote' | 'downvote') => {
+  const handleVote = async (voteType: 'upvote' | 'downvote' | 'none') => {
     if (!user) {
       router.push('/auth');
       return;
     }
 
     try {
-      if (voteType === 'upvote') {
-        await upvoteBill(billId);
-        setUpvotes(prev => prev + 1);
-      } else {
-        await downvoteBill(billId);
-        setDownvotes(prev => prev + 1);
-      }
-      setHasVoted(true);
+      await voteBill(billId, voteType);
+      setVoteStatus(voteType);
     } catch (error) {
       console.error(`Failed to ${voteType}:`, error);
     }
@@ -45,10 +36,10 @@ export default function VoteButton({ billId, initialUpvotes, initialDownvotes }:
     <div className="flex space-x-2">
       <button
         onClick={() => handleVote('upvote')}
-        disabled={hasVoted || !user}
+        disabled={voteStatus === 'upvote' || !user}
         className={`flex items-center space-x-1 px-3 py-1 rounded-full transition-colors ${
-          hasVoted
-            ? 'bg-gray-100 text-gray-500'
+          voteStatus === 'upvote'
+            ? 'bg-blue-600 text-white'
             : user 
               ? 'bg-blue-50 text-blue-600 hover:bg-blue-100'
               : 'bg-gray-100 text-gray-400 cursor-not-allowed'
@@ -56,14 +47,13 @@ export default function VoteButton({ billId, initialUpvotes, initialDownvotes }:
         title={!user ? 'Login to upvote' : undefined}
       >
         <span className="text-lg">↑</span>
-        <span>{upvotes}</span>
       </button>
       <button
         onClick={() => handleVote('downvote')}
-        disabled={hasVoted || !user}
+        disabled={voteStatus === 'downvote' || !user}
         className={`flex items-center space-x-1 px-3 py-1 rounded-full transition-colors ${
-          hasVoted
-            ? 'bg-gray-100 text-gray-500'
+          voteStatus === 'downvote'
+            ? 'bg-red-600 text-white'
             : user 
               ? 'bg-red-50 text-red-600 hover:bg-red-100'
               : 'bg-gray-100 text-gray-400 cursor-not-allowed'
@@ -71,8 +61,15 @@ export default function VoteButton({ billId, initialUpvotes, initialDownvotes }:
         title={!user ? 'Login to downvote' : undefined}
       >
         <span className="text-lg">↓</span>
-        <span>{downvotes}</span>
       </button>
+      {voteStatus !== 'none' && (
+        <button
+          onClick={() => handleVote('none')}
+          className="flex items-center space-x-1 px-3 py-1 rounded-full bg-gray-200 text-gray-600 hover:bg-gray-300"
+        >
+          <span className="text-lg">✕</span>
+        </button>
+      )}
     </div>
   );
 }
