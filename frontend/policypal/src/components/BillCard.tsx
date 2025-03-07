@@ -21,7 +21,7 @@ export default function BillCard({ bill }: BillCardProps) {
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-md overflow-hidden">
+    <div className="bill-card bg-white rounded-lg shadow-md overflow-hidden">
       <div className="p-6">
         <div className="flex justify-between items-start">
           <div className="flex-1">
@@ -29,7 +29,7 @@ export default function BillCard({ bill }: BillCardProps) {
               {bill.title}
             </h2>
             <div className="mt-2 flex items-center space-x-4 text-sm text-gray-500">
-              <span>{bill.bill_type}{bill.bill_number}</span>
+              <span>{bill.bill_type} {bill.bill_number}</span>
               <span>•</span>
               <span>{bill.origin_chamber}</span>
               <span>•</span>
