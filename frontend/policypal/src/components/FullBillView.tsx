@@ -83,7 +83,6 @@ export default function FullBillView({ billId }: FullBillViewProps) {
                 <h3 className="text-lg font-semibold mb-2 text-gray-900">Status</h3>
                 <VoteButton billId={bill._id} upvoteCount={bill.upvote_count} downvoteCount={bill.downvote_count} initialVoteStatus={bill.user_vote_status}  />
               </div>
-              <p className="text-gray-700">Total Votes: {bill.vote_count}</p>
             </div>
           </div>
         </div>
