@@ -1,0 +1,30 @@
+{
+  "demographics": {
+    "upvote": {
+      "political_affiliation_distribution": {
+        "democrat": 50,
+        "republican": 30,
+        "independent": 20
+      },
+      "age_distribution": {
+        "under_18": 10,
+        "18_to_30": 40,
+        "30_to_60": 30,
+        "60_plus": 20
+      }
+    },
+    "downvote": {
+      "political_affiliation_distribution": {
+        "democrat": 20,
+        "republican": 50,
+        "independent": 30
+      },
+      "age_distribution": {
+        "under_18": 5,
+        "18_to_30": 20,
+        "30_to_60": 50,
+        "60_plus": 25
+      }
+    }
+  }
+}

@@ -53,7 +53,8 @@ poetry run pytest
 ### Frontend
 ```sh
 cd frontend
-npm start
+cd policypal
+npm run dev
 ```
 
 ### Search
