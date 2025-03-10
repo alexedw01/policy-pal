@@ -13,10 +13,11 @@ export default function AdvancedSearchPage() {
     const keyword = searchParams.get('keyword') || '';
     const [inputValue, setInputValue] = useState(keyword || "");
     const [chamber, setChamber] = useState('all');
-    const [sortBy, setSortBy] = useState('oldest');
+    const [sortBy, setSortBy] = useState('relevancy');
     let today = new Date();
-    const [startDate, setStartDate] = useState(today.toISOString().split('T')[0]);
     const [endDate, setEndDate] = useState(today.toISOString().split('T')[0]);
+    today.setDate(today.getDate() - 1);
+    const [startDate, setStartDate] = useState(today.toISOString().split('T')[0]);
     const [bills, setBills] = useState<Bill[]>([]);
     const [loading, setLoading] = useState(true);
 
@@ -41,8 +42,7 @@ export default function AdvancedSearchPage() {
                             case 'oldest':
                                 return new Date(a.latest_action_date).getTime() - new Date(b.latest_action_date).getTime();
                             case 'most-votes':
-                            //return b.vote_count - a.vote_count;
-                                return 0;
+                                return b.vote_count - a.vote_count;
                             default:
                                 return 0;
                         }
