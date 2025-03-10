@@ -1032,10 +1032,14 @@ def search_bills_tfidf():
 @jwt_required()
 def vote_on_bill(bill_id):
     """
-    Endpoint to allow a user to vote on a bill. It handles three vote statuses:
-      - "upvote" or "downvote": casting or changing a vote,
-      - "none": removing an existing vote.
-    It updates the Vote entity's demographic counters and the User's voted_bills accordingly.
+    Endpoint to allow a user to vote on a bill.
+
+    It handles three vote statuses:
+
+    - "upvote" or "downvote": Casting or changing a vote.
+    - "none": Removing an existing vote.
+
+    It updates the Vote entity's demographic counters and the User's `voted_bills` accordingly.
     """
     try:
         data = request.get_json()

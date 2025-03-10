@@ -1,15 +1,39 @@
+# Policy Pal
+
+Policy Pal is a web application that facilitates legislative voting with a focus on demographic analytics. This document provides the steps to install, set up, and run both the backend and frontend services.
+
+---
+
+## Table of Contents
+
+- [Installation & Setup](#installation--setup)
+  - [Backend](#backend)
+    - [Environment Setup](#environment-setup)
+    - [Dependencies & Running the Server](#dependencies--running-the-server)
+    - [Testing](#testing)
+  - [Database (Google Cloud SQL)](#database-google-cloud-sql)
+  - [Frontend](#frontend)
+- [Additional Resources](#additional-resources)
+
+---
+
 ## Installation & Setup
 
 ### Backend
-1. set up .env
+
+#### Environment Setup
+
+1. **Configure Environment Variables:**
+
+Navigate to the backend folder and create a `.env` file:
+
 ```sh
 cd backend/backend
 touch .env
 ```
 
-in `.env` add the variables below. follow [google_cloud_sql_tutorial]https://www.geeksforgeeks.org/setting-up-google-cloud-sql-with-flask/ to set up the `.env`. Talk to Alex if you are having issues.
 
-**DISABLE BILLING ON GOOGLE CLOUD SQL INSTANCE WHEN NOT USING YOU WILL INCUR COSTS!!!**
+in `.env` add the variables below. follow [google_cloud_sql_tutorial]https://www.geeksforgeeks.org/setting-up-google-cloud-sql-with-flask/ to set up the `.env`. Talk to Alex if you are having issues.
 
 ```sh
 PASSWORD =""
@@ -46,7 +70,8 @@ poetry run flask run --port=8080
 #### Backend Testing
 ```sh
 cd backend/backend
-poetry run pytest
+poetry run pytest bills_test.py
+poetry run pytest user_test.py
 ```
 
 ### Database (Google Cloud SQL)

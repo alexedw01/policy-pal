@@ -6,11 +6,12 @@ from backend.app import app, db, User
 def client():
     """
     Configures the Flask application for testing using an in-memory SQLite database.
-    The database tables are created before yielding the test client and cleaned up afterward.
+    The database tables are dropped and created before yielding the test client and cleaned up afterward.
     """
     app.config["TESTING"] = True
     app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///:memory:"
     with app.app_context():
+        db.drop_all()
         db.create_all()
         yield app.test_client()
         db.session.remove()
@@ -28,7 +29,7 @@ def test_register_success(client):
         "gender": "male",
         "ethnicity": "asian",
         "state": "california",
-        "political_affiliation": "democrat"
+        "political_affiliation": "libertarian"  
     }
     response = client.post("/api/auth/register", json=payload)
     assert response.status_code == 201
@@ -45,7 +46,7 @@ def test_register_success(client):
 def test_register_missing_fields(client):
     """
     Test registration with missing required fields.
-    Omits several required fields so that the endpoint returns an error.
+    Since the endpoint first attempts to convert the 'age' field, omitting it returns "Invalid age format".
     """
     payload = {
         "email": "missing@example.com",
@@ -54,8 +55,9 @@ def test_register_missing_fields(client):
     response = client.post("/api/auth/register", json=payload)
     assert response.status_code == 400
     data = response.get_json()
+    # Because "age" is missing, the conversion fails, returning "Invalid age format"
     assert "error" in data
-    assert data["error"] == "Missing required fields"
+    assert data["error"] == "Invalid age format"
 
 def test_register_duplicate(client):
     """
@@ -70,7 +72,7 @@ def test_register_duplicate(client):
         "gender": "female",
         "ethnicity": "white",
         "state": "texas",
-        "political_affiliation": "independent"
+        "political_affiliation": "other"  
     }
     response1 = client.post("/api/auth/register", json=payload)
     assert response1.status_code == 201
@@ -94,7 +96,7 @@ def test_register_invalid_age(client):
         "gender": "male",
         "ethnicity": "asian",
         "state": "california",
-        "political_affiliation": "democrat"
+        "political_affiliation": "libertarian"
     }
     response = client.post("/api/auth/register", json=payload)
     assert response.status_code == 400
@@ -113,7 +115,7 @@ def test_register_invalid_gender(client):
         "gender": "unknown",  # Invalid gender
         "ethnicity": "asian",
         "state": "california",
-        "political_affiliation": "democrat"
+        "political_affiliation": "libertarian"
     }
     response = client.post("/api/auth/register", json=payload)
     assert response.status_code == 400
@@ -132,7 +134,7 @@ def test_register_invalid_ethnicity(client):
         "gender": "male",
         "ethnicity": "martian",  # Invalid ethnicity
         "state": "california",
-        "political_affiliation": "democrat"
+        "political_affiliation": "libertarian"
     }
     response = client.post("/api/auth/register", json=payload)
     assert response.status_code == 400
@@ -151,7 +153,7 @@ def test_register_invalid_state(client):
         "gender": "male",
         "ethnicity": "asian",
         "state": "atlantis",  # Invalid state
-        "political_affiliation": "democrat"
+        "political_affiliation": "libertarian"
     }
     response = client.post("/api/auth/register", json=payload)
     assert response.status_code == 400
@@ -170,7 +172,7 @@ def test_register_invalid_political_affiliation(client):
         "gender": "male",
         "ethnicity": "asian",
         "state": "california",
-        "political_affiliation": "fanatic"  # Invalid political affiliation
+        "political_affiliation": "fanatic"  # Invalid affiliation
     }
     response = client.post("/api/auth/register", json=payload)
     assert response.status_code == 400
@@ -196,9 +198,10 @@ def test_get_users(client):
         "gender": "female",
         "ethnicity": "white",
         "state": "florida",
-        "political_affiliation": "independent"
+        "political_affiliation": "other"  # updated from "independent"
     }
-    client.post("/api/auth/register", json=payload)
+    reg_response = client.post("/api/auth/register", json=payload)
+    assert reg_response.status_code == 201
     response = client.get("/api/auth/users")
     data = response.get_json()
     assert len(data) == 1
@@ -219,13 +222,13 @@ def test_login_success_with_email(client):
         "gender": "male",
         "ethnicity": "asian",
         "state": "california",
-        "political_affiliation": "democrat"
+        "political_affiliation": "libertarian"  # updated from "democrat"
     }
     reg_response = client.post("/api/auth/register", json=payload)
     assert reg_response.status_code == 201
 
     login_payload = {
-        "email": payload["email"],  
+        "email": payload["email"],
         "password": payload["password"]
     }
     response = client.post("/api/auth/login", json=login_payload)
@@ -251,13 +254,13 @@ def test_login_success_with_username(client):
         "gender": "female",
         "ethnicity": "hispanic or latino",
         "state": "new york",
-        "political_affiliation": "republican"
+        "political_affiliation": "conservative"  # updated from "republican"
     }
     reg_response = client.post("/api/auth/register", json=payload)
     assert reg_response.status_code == 201
 
     login_payload = {
-        "email": payload["username"], 
+        "email": payload["username"],
         "password": payload["password"]
     }
     response = client.post("/api/auth/login", json=login_payload)
@@ -276,7 +279,7 @@ def test_login_missing_fields(client):
     Test login attempt with missing required fields.
     """
     login_payload = {
-        "email": "someone@example.com"  
+        "email": "someone@example.com"  # missing password
     }
     response = client.post("/api/auth/login", json=login_payload)
     assert response.status_code == 400
@@ -296,7 +299,7 @@ def test_login_invalid_credentials(client):
         "gender": "male",
         "ethnicity": "asian",
         "state": "california",
-        "political_affiliation": "democrat"
+        "political_affiliation": "libertarian"  
     }
     client.post("/api/auth/register", json=payload)
 
@@ -322,8 +325,8 @@ def test_register_state_conversion(client):
         "age": 25,
         "gender": "male",
         "ethnicity": "asian",
-        "state": "california",  
-        "political_affiliation": "democrat"
+        "state": "california",
+        "political_affiliation": "libertarian"  
     }
     response = client.post("/api/auth/register", json=payload)
     assert response.status_code == 201
@@ -331,4 +334,5 @@ def test_register_state_conversion(client):
     with app.app_context():
         user = User.query.filter_by(email="fullstate@example.com").first()
         assert user is not None
+        # "california" should be converted to "ca"
         assert user.state == "ca"

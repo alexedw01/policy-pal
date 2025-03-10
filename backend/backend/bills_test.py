@@ -1,7 +1,7 @@
 import pytest
 import json
 from datetime import datetime, timezone
-from backend.app import app, db, Bill, Vote, serialize_bill, User, default_demographics
+from backend.app import app, db, Bill, Vote, serialize_bill, User, default_demographics, build_bill_search_entries
 
 @pytest.fixture(autouse=True, scope="module")
 def patch_user_init():
@@ -22,6 +22,7 @@ def client():
     app.config["TESTING"] = True
     app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///test_bills.db"
     with app.app_context():
+        db.drop_all()
         db.create_all()
         yield app.test_client()
         db.session.remove()
@@ -43,7 +44,7 @@ def registered_users(client):
             "gender": "male",
             "ethnicity": "white",
             "state": "ca",
-            "political_affiliation": "democrat"
+            "political_affiliation": "libertarian"
         },
         {
             "email": "user2@example.com",
@@ -53,7 +54,7 @@ def registered_users(client):
             "gender": "female",
             "ethnicity": "asian",
             "state": "ny",
-            "political_affiliation": "republican"
+            "political_affiliation": "conservative"
         },
         {
             "email": "user3@example.com",
@@ -63,7 +64,7 @@ def registered_users(client):
             "gender": "non-binary",
             "ethnicity": "black or african american",
             "state": "tx",
-            "political_affiliation": "independent"
+            "political_affiliation": "progressive"
         },
         {
             "email": "user4@example.com",
@@ -237,15 +238,12 @@ def test_search_tfidf(client):
     Test that the /api/search_tfidf endpoint returns bills matching the provided keyword
     using TF–IDF over full_text, ai_summary, and title.
     """
-    # Import and build the search index from the combined fields.
-    from backend.app import build_bill_search_entries
     with app.app_context():
         build_bill_search_entries()
     response = client.get("/api/search_tfidf", query_string={"keyword": "Test Bill One"})
     assert response.status_code == 200
     data = response.get_json()
     assert isinstance(data, list)
-    # Verify that the bill with "Test Bill One" in the title is returned.
     assert any("Test Bill One" in bill["title"] for bill in data)
 
 def test_vote_bill_upvote(client, registered_users):
@@ -415,7 +413,7 @@ def test_bill_demographics(client, registered_users):
         bill_id = bill.id
 
         custom_demo = default_demographics()
-        # For upvote: update for user1 (16, male, ca, white, democrat) and user2 (25, female, ny, asian, republican)
+        # For upvote: update for two simulated votes
         custom_demo["upvote"]["age_distribution"]["under_18"] += 1
         custom_demo["upvote"]["age_distribution"]["18_to_30"] += 1
         custom_demo["upvote"]["gender_distribution"]["male"] += 1
@@ -427,8 +425,7 @@ def test_bill_demographics(client, registered_users):
         custom_demo["upvote"]["political_affiliation_distribution"]["democrat"] += 1
         custom_demo["upvote"]["political_affiliation_distribution"]["republican"] += 1
 
-        # For downvote: update for user3 (35, non-binary, tx, black or african american, independent)
-        # and user4 (65, transgender, fl, hispanic or latino, socialist)
+        # For downvote: update for two simulated votes
         custom_demo["downvote"]["age_distribution"]["30_to_60"] += 1
         custom_demo["downvote"]["age_distribution"]["60_plus"] += 1
         custom_demo["downvote"]["gender_distribution"]["non-binary"] += 1
