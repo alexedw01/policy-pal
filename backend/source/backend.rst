@@ -11,11 +11,20 @@ backend.app module
    :members:
    :show-inheritance:
    :undoc-members:
+   :no-index:
 
-backend.test\_app module
-------------------------
+backend.bills\_test module
+--------------------------
 
-.. automodule:: backend.test_app
+.. automodule:: backend.bills_test
+   :members:
+   :show-inheritance:
+   :undoc-members:
+
+backend.user\_test module
+-------------------------
+
+.. automodule:: backend.user_test
    :members:
    :show-inheritance:
    :undoc-members:

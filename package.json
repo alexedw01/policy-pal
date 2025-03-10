@@ -1,8 +1,5 @@
 {
-  "dependencies": {
-    "@testing-library/react": "^16.2.0"
-  },
   "devDependencies": {
-    "jest": "^29.7.0"
+    "cypress": "^14.1.0"
   }
 }

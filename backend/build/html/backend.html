@@ -5,11 +5,11 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>backend package &#8212; Policy Pal v1 documentation</title>
+    <title>backend package &#8212; Policy Pal  documentation</title>
     <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=5ecbeea2" />
-    <link rel="stylesheet" type="text/css" href="_static/basic.css?v=686e5160" />
+    <link rel="stylesheet" type="text/css" href="_static/basic.css?v=b08954a9" />
     <link rel="stylesheet" type="text/css" href="_static/alabaster.css?v=27fed22d" />
-    <script src="_static/documentation_options.js?v=5cb08e4e"></script>
+    <script src="_static/documentation_options.js?v=5929fcd5"></script>
     <script src="_static/doctools.js?v=9bcbadda"></script>
     <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
     <link rel="index" title="Index" href="genindex.html" />
@@ -37,20 +37,559 @@
 <section id="submodules">
 <h2>Submodules<a class="headerlink" href="#submodules" title="Link to this heading">¶</a></h2>
 </section>
-<section id="module-backend.app">
-<span id="backend-app-module"></span><h2>backend.app module<a class="headerlink" href="#module-backend.app" title="Link to this heading">¶</a></h2>
-<p>Flask Application for User Management</p>
+<section id="backend-app-module">
+<h2>backend.app module<a class="headerlink" href="#backend-app-module" title="Link to this heading">¶</a></h2>
+<p>Flask Application for Backend Management</p>
 <p>This module provides a Flask application that supports user registration,
-login, and retrieval of user details. It uses Flask-SQLAlchemy for database operations,
-Flask CLI for command line commands, and includes secure password handling.</p>
+login, bill storage, and scraping/updating congressional bill details.
+It uses Flask-SQLAlchemy for database operations, Flask CLI for command line commands,
+and includes secure password handling.</p>
 <dl class="py class">
-<dt class="sig sig-object py" id="backend.app.User">
-<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">backend.app.</span></span><span class="sig-name descname"><span class="pre">User</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/backend/app.html#User"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#backend.app.User" title="Link to this definition">¶</a></dt>
+<dt class="sig sig-object py">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">backend.app.</span></span><span class="sig-name descname"><span class="pre">Bill</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/backend/app.html#Bill"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Model</span></code></p>
+<p>Bill model for storing congressional bill details.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">id</span></span></dt>
+<dd><p>Primary key for the bill record.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">congress</span></span></dt>
+<dd><p>The Congress number that the bill belongs to.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">bill_type</span></span></dt>
+<dd><p>The type of the bill (e.g., “H.R.”, “S.”).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">bill_number</span></span></dt>
+<dd><p>The specific bill number.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">title</span></span></dt>
+<dd><p>The title of the bill.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">latest_action_date</span></span></dt>
+<dd><p>The date of the most recent action on the bill.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>datetime</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">origin_chamber</span></span></dt>
+<dd><p>The chamber where the bill originated (e.g., “House”, “Senate”).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">sponsor</span></span></dt>
+<dd><p>The name of the bill’s sponsor.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">latest_action</span></span></dt>
+<dd><p>A JSON object storing details about the bill’s latest action.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">update_date</span></span></dt>
+<dd><p>The date when the bill was last updated.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>datetime</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">url</span></span></dt>
+<dd><p>The URL linking to the bill’s detailed information.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">text_preview</span></span></dt>
+<dd><p>A preview snippet of the bill’s text.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">full_text</span></span></dt>
+<dd><p>The full text of the bill.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">ai_summary</span></span></dt>
+<dd><p>An AI-generated summary of the bill.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">vote_count</span></span></dt>
+<dd><p>A counter to identify bills with the most activity.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">created_at</span></span></dt>
+<dd><p>The timestamp when the bill record was created.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>datetime</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">updated_at</span></span></dt>
+<dd><p>The timestamp when the bill record was last updated.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>datetime</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">ai_summary</span></span></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">bill_number</span></span></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">bill_type</span></span></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">congress</span></span></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">created_at</span></span></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">downvote_count</span></span></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">full_text</span></span></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">id</span></span></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">latest_action</span></span></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">latest_action_date</span></span></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">origin_chamber</span></span></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">query</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">t.ClassVar</span><span class="p"><span class="pre">[</span></span><span class="pre">Query</span><span class="p"><span class="pre">]</span></span></em></dt>
+<dd><p>A SQLAlchemy query for a model. Equivalent to <code class="docutils literal notranslate"><span class="pre">db.session.query(Model)</span></code>. Can be
+customized per-model by overriding <code class="xref py py-attr docutils literal notranslate"><span class="pre">query_class</span></code>.</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>The query interface is considered legacy in SQLAlchemy. Prefer using
+<code class="docutils literal notranslate"><span class="pre">session.execute(select())</span></code> instead.</p>
+</div>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">sponsor</span></span></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">text_preview</span></span></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">title</span></span></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">update_date</span></span></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">updated_at</span></span></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">upvote_count</span></span></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">url</span></span></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">vote_count</span></span></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">backend.app.</span></span><span class="sig-name descname"><span class="pre">BillSearchEntry</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/backend/app.html#BillSearchEntry"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Model</span></code></p>
+<dl class="py attribute">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">bill_id</span></span></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">combined_text</span></span></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">id</span></span></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">query</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">t.ClassVar</span><span class="p"><span class="pre">[</span></span><span class="pre">Query</span><span class="p"><span class="pre">]</span></span></em></dt>
+<dd><p>A SQLAlchemy query for a model. Equivalent to <code class="docutils literal notranslate"><span class="pre">db.session.query(Model)</span></code>. Can be
+customized per-model by overriding <code class="xref py py-attr docutils literal notranslate"><span class="pre">query_class</span></code>.</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>The query interface is considered legacy in SQLAlchemy. Prefer using
+<code class="docutils literal notranslate"><span class="pre">session.execute(select())</span></code> instead.</p>
+</div>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">backend.app.</span></span><span class="sig-name descname"><span class="pre">CongressionalScraper</span></span><a class="reference internal" href="_modules/backend/app.html#CongressionalScraper"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>A class responsible for scraping congressional bill data from an external API.</p>
+<dl class="simple">
+<dt>This class handles rate limiting for API requests and provides methods to:</dt><dd><ul class="simple">
+<li><p>Fetch detailed bill information from a given URL.</p></li>
+<li><p>Retrieve a text preview or the full text of a bill.</p></li>
+<li><p>Process bill data by checking for existing records in the database and inserting or updating them.</p></li>
+<li><p>Perform batch scraping and daily updates.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">headers</span></span></dt>
+<dd><p>Headers to use for API requests, including the API key.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">last_request_time</span></span></dt>
+<dd><p>Timestamp of the last API request, used for rate limiting.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">batch_scrape</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">congress</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">offset</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">limit</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">20</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">tuple</span></span></span><a class="reference internal" href="_modules/backend/app.html#CongressionalScraper.batch_scrape"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
+<dd><p>Perform batch scraping of bills from the external API.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>congress</strong> (<em>int</em>) – The Congress number to scrape.</p></li>
+<li><p><strong>offset</strong> (<em>int</em><em>, </em><em>optional</em>) – Pagination offset; defaults to 0.</p></li>
+<li><p><strong>limit</strong> (<em>int</em><em>, </em><em>optional</em>) – Number of bills to process in one batch; defaults to 20.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><dl class="simple">
+<dt>A tuple containing:</dt><dd><ul class="simple">
+<li><p>processed_count (int): Number of new bills processed.</p></li>
+<li><p>batch_count (int): Number of bills fetched in the current batch.</p></li>
+<li><p>total_count (int): Total available count of bills from the API.</p></li>
+</ul>
+</dd>
+</dl>
+</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>tuple</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">daily_update</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span></span></span><a class="reference internal" href="_modules/backend/app.html#CongressionalScraper.daily_update"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
+<dd><p>Perform a daily update of new and modified bills from the external API.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The number of bills processed during the daily update.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">get_bill_details</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">url</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="reference internal" href="_modules/backend/app.html#CongressionalScraper.get_bill_details"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
+<dd><p>Fetch detailed bill information from the given URL.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>url</strong> (<em>str</em>) – The URL from which to fetch the bill details.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A dictionary containing detailed bill information, or an empty dict on failure.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">get_bill_text</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">congress</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bill_type</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bill_number</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">full_text</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="reference internal" href="_modules/backend/app.html#CongressionalScraper.get_bill_text"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
+<dd><p>Fetch the bill text from the external API.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>congress</strong> (<em>int</em>) – The Congress number.</p></li>
+<li><p><strong>bill_type</strong> (<em>str</em>) – The type of the bill (e.g., ‘H.R.’, ‘S.’).</p></li>
+<li><p><strong>bill_number</strong> (<em>str</em>) – The bill number.</p></li>
+<li><p><strong>full_text</strong> (<em>bool</em>) – If True, return the full text; otherwise, return a preview.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The bill text (either full or a preview), or an empty string on failure.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">process_bill</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bill_data</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="reference internal" href="_modules/backend/app.html#CongressionalScraper.process_bill"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
+<dd><p>Process a single bill by fetching additional details and inserting or updating it in the database.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>bill_data</strong> (<em>dict</em>) – Raw bill data obtained from the external source.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>True if a new bill was inserted; False if an existing bill was updated or on error.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>bool</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">backend.app.</span></span><span class="sig-name descname"><span class="pre">ScrapeTracking</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/backend/app.html#ScrapeTracking"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Model</span></code></p>
+<p>Model to track the current offset for scheduled batch scrapes.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">id</span></span></dt>
+<dd><p>Primary key for the tracking record.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">type</span></span></dt>
+<dd><p>Type of tracking record (e.g., “offset”).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">offset</span></span></dt>
+<dd><p>Current offset value for batch scraping.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">id</span></span></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">offset</span></span></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">query</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">t.ClassVar</span><span class="p"><span class="pre">[</span></span><span class="pre">Query</span><span class="p"><span class="pre">]</span></span></em></dt>
+<dd><p>A SQLAlchemy query for a model. Equivalent to <code class="docutils literal notranslate"><span class="pre">db.session.query(Model)</span></code>. Can be
+customized per-model by overriding <code class="xref py py-attr docutils literal notranslate"><span class="pre">query_class</span></code>.</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>The query interface is considered legacy in SQLAlchemy. Prefer using
+<code class="docutils literal notranslate"><span class="pre">session.execute(select())</span></code> instead.</p>
+</div>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">type</span></span></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">backend.app.</span></span><span class="sig-name descname"><span class="pre">User</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/backend/app.html#User"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Model</span></code></p>
 <p>User model for storing user details.</p>
 <dl class="py attribute">
-<dt class="sig sig-object py" id="backend.app.User.id">
-<span class="sig-name descname"><span class="pre">id</span></span><a class="headerlink" href="#backend.app.User.id" title="Link to this definition">¶</a></dt>
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">id</span></span></dt>
 <dd><p>Primary key for the user record.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type<span class="colon">:</span></dt>
@@ -60,8 +599,8 @@ Flask CLI for command line commands, and includes secure password handling.</p>
 </dd></dl>
 
 <dl class="py attribute">
-<dt class="sig sig-object py" id="backend.app.User.email">
-<span class="sig-name descname"><span class="pre">email</span></span><a class="headerlink" href="#backend.app.User.email" title="Link to this definition">¶</a></dt>
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">email</span></span></dt>
 <dd><p>Unique email address of the user.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type<span class="colon">:</span></dt>
@@ -71,8 +610,8 @@ Flask CLI for command line commands, and includes secure password handling.</p>
 </dd></dl>
 
 <dl class="py attribute">
-<dt class="sig sig-object py" id="backend.app.User.username">
-<span class="sig-name descname"><span class="pre">username</span></span><a class="headerlink" href="#backend.app.User.username" title="Link to this definition">¶</a></dt>
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">username</span></span></dt>
 <dd><p>Unique username chosen by the user.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type<span class="colon">:</span></dt>
@@ -82,8 +621,8 @@ Flask CLI for command line commands, and includes secure password handling.</p>
 </dd></dl>
 
 <dl class="py attribute">
-<dt class="sig sig-object py" id="backend.app.User.password_hash">
-<span class="sig-name descname"><span class="pre">password_hash</span></span><a class="headerlink" href="#backend.app.User.password_hash" title="Link to this definition">¶</a></dt>
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">password_hash</span></span></dt>
 <dd><p>Hashed password for security.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Type<span class="colon">:</span></dt>
@@ -92,55 +631,116 @@ Flask CLI for command line commands, and includes secure password handling.</p>
 </dl>
 </dd></dl>
 
-<dl class="py method">
+<dl class="py attribute">
 <dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">set_password(password</span></span></dt>
-<dd><p>str) -&gt; None:
-Hashes the provided password and sets it to the user’s password_hash.</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py">
-<span class="sig-name descname"><span class="pre">check_password(password</span></span></dt>
-<dd><p>str) -&gt; bool:
-Verifies if the provided password matches the stored password_hash.</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="backend.app.User.check_password">
-<span class="sig-name descname"><span class="pre">check_password</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">password</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/backend/app.html#User.check_password"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#backend.app.User.check_password" title="Link to this definition">¶</a></dt>
-<dd><p>Checks if the provided password matches the stored hash.</p>
+<span class="sig-name descname"><span class="pre">age</span></span></dt>
+<dd><p>Age of the user.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>password</strong> (<em>str</em>) – The plain text password to verify.</p>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>True if the password is correct, False otherwise.</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>bool</p>
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py attribute">
-<dt class="sig sig-object py" id="id0">
-<span class="sig-name descname"><span class="pre">email</span></span><a class="headerlink" href="#id0" title="Link to this definition">¶</a></dt>
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">gender</span></span></dt>
+<dd><p>Gender of the user (e.g., Male, Female, Non-binary, Other).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">ethnicity</span></span></dt>
+<dd><p>Ethnic group the user belongs to (e.g. Hispanic or Latino, white, asian)</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">state</span></span></dt>
+<dd><p>state the user lives in.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">political_affiliation</span></span></dt>
+<dd><p>Political leaning (e.g., Democrat, Republican, Independent).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">voted_bills</span></span></dt>
+<dd><p>A dictionary storing bill IDs as keys and the corresponding vote value as values.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>JSON</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">age</span></span></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">check_password</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">password</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="reference internal" href="_modules/backend/app.html#User.check_password"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
+<dd><p>Verify if the provided password matches the stored hash.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">email</span></span></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
-<dt class="sig sig-object py" id="id1">
-<span class="sig-name descname"><span class="pre">id</span></span><a class="headerlink" href="#id1" title="Link to this definition">¶</a></dt>
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">ethnicity</span></span></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
-<dt class="sig sig-object py" id="id2">
-<span class="sig-name descname"><span class="pre">password_hash</span></span><a class="headerlink" href="#id2" title="Link to this definition">¶</a></dt>
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">gender</span></span></dt>
 <dd></dd></dl>
 
 <dl class="py attribute">
-<dt class="sig sig-object py" id="backend.app.User.query">
-<span class="sig-name descname"><span class="pre">query</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">t.ClassVar[Query]</span></em><a class="headerlink" href="#backend.app.User.query" title="Link to this definition">¶</a></dt>
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">id</span></span></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">password_hash</span></span></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">political_affiliation</span></span></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">query</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">t.ClassVar</span><span class="p"><span class="pre">[</span></span><span class="pre">Query</span><span class="p"><span class="pre">]</span></span></em></dt>
 <dd><p>A SQLAlchemy query for a model. Equivalent to <code class="docutils literal notranslate"><span class="pre">db.session.query(Model)</span></code>. Can be
 customized per-model by overriding <code class="xref py py-attr docutils literal notranslate"><span class="pre">query_class</span></code>.</p>
 <div class="admonition warning">
@@ -151,201 +751,468 @@ customized per-model by overriding <code class="xref py py-attr docutils literal
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="backend.app.User.set_password">
-<span class="sig-name descname"><span class="pre">set_password</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">password</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/backend/app.html#User.set_password"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#backend.app.User.set_password" title="Link to this definition">¶</a></dt>
-<dd><p>Hashes and sets the user’s password.</p>
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">set_password</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">password</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="reference internal" href="_modules/backend/app.html#User.set_password"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
+<dd><p>Hash and set the user’s password.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">state</span></span></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">username</span></span></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">voted_bills</span></span></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">backend.app.</span></span><span class="sig-name descname"><span class="pre">Vote</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/backend/app.html#Vote"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">Model</span></code></p>
+<p>Association model that stores a vote cast by a user on a bill.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">bill_id</span></span></dt>
+<dd><p>Foreign key referencing the Bill being voted on.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>password</strong> (<em>str</em>) – The plain text password to be hashed.</p>
-</dd>
-<dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p><span class="sphinx_autodoc_typehints-type"><code class="xref py py-obj docutils literal notranslate"><span class="pre">None</span></code></span></p>
-</dd>
-<dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p>None</p>
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>int</p>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py attribute">
-<dt class="sig sig-object py" id="id3">
-<span class="sig-name descname"><span class="pre">username</span></span><a class="headerlink" href="#id3" title="Link to this definition">¶</a></dt>
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">vote_status</span></span></dt>
+<dd><p>The vote status (e.g., ‘yes’, ‘no’, ‘abstain’).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>str</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">bill_id</span></span></dt>
 <dd></dd></dl>
 
-</dd></dl>
+<dl class="py attribute">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">demographics</span></span></dt>
+<dd></dd></dl>
 
-<dl class="py function">
-<dt class="sig sig-object py" id="backend.app.get_users">
-<span class="sig-prename descclassname"><span class="pre">backend.app.</span></span><span class="sig-name descname"><span class="pre">get_users</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/backend/app.html#get_users"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#backend.app.get_users" title="Link to this definition">¶</a></dt>
-<dd><p>Retrieve all users.</p>
-<p>Endpoint: /users
-Method: GET</p>
-<dl class="field-list simple">
-<dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p><ul class="simple">
-<li><dl class="simple">
-<dt>id (int)</dt><dd><ul>
-<li><p>email (str)</p></li>
-<li><p>username (str)</p></li>
-</ul>
-</dd>
-</dl>
-</li>
-</ul>
-<p>Status Code 200 on success.</p>
-</p>
-</dd>
-<dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p>JSON list of user objects, each containing</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="backend.app.login">
-<span class="sig-prename descclassname"><span class="pre">backend.app.</span></span><span class="sig-name descname"><span class="pre">login</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/backend/app.html#login"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#backend.app.login" title="Link to this definition">¶</a></dt>
-<dd><p>Log in a user.</p>
-<p>Endpoint: /login
-Method: POST</p>
-<dl>
-<dt>Request JSON Body:</dt><dd><dl class="simple">
-<dt>{</dt><dd><p>“username_or_email”: str,   # User’s email or username.
-“password”: str             # User’s plain text password.</p>
-</dd>
-</dl>
-<p>}</p>
-</dd>
-</dl>
-<dl class="field-list simple">
-<dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p>{“message”: “Logged in successfully”} if credentials are valid.
-- 400: {“error”: “Missing required fields”} if any field is absent.
-- 401: {“error”: “Invalid credentials”} if authentication fails.</p>
-</dd>
-<dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p><ul class="simple">
-<li><p>200</p></li>
-</ul>
-</p>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py function">
-<dt class="sig sig-object py" id="backend.app.register">
-<span class="sig-prename descclassname"><span class="pre">backend.app.</span></span><span class="sig-name descname"><span class="pre">register</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/backend/app.html#register"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#backend.app.register" title="Link to this definition">¶</a></dt>
-<dd><p>Register a new user.</p>
-<p>Endpoint: /register
-Method: POST</p>
-<dl>
-<dt>Request JSON Body:</dt><dd><dl class="simple">
-<dt>{</dt><dd><p>“email”: str,       # User’s email address.
-“username”: str,    # User’s desired username.
-“password”: str     # User’s plain text password.</p>
-</dd>
-</dl>
-<p>}</p>
-</dd>
-</dl>
-<dl class="field-list simple">
-<dt class="field-odd">Returns<span class="colon">:</span></dt>
-<dd class="field-odd"><p><ul class="simple">
-<li><p>201: {“message”: “User created successfully”} on successful registration.</p></li>
-<li><p>400: {“error”: “Missing required fields”} if any field is absent.</p></li>
-<li><p>400: {“error”: “User with given email or username already exists”} if duplicate user.</p></li>
-</ul>
-</p>
-</dd>
-<dt class="field-even">Return type<span class="colon">:</span></dt>
-<dd class="field-even"><p>JSON response with</p>
-</dd>
-</dl>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>This endpoint adheres to the Information Hiding Principle by exposing only the necessary contract
-(input fields and expected responses) while encapsulating internal logic such as password hashing.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">query</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">t.ClassVar</span><span class="p"><span class="pre">[</span></span><span class="pre">Query</span><span class="p"><span class="pre">]</span></span></em></dt>
+<dd><p>A SQLAlchemy query for a model. Equivalent to <code class="docutils literal notranslate"><span class="pre">db.session.query(Model)</span></code>. Can be
+customized per-model by overriding <code class="xref py py-attr docutils literal notranslate"><span class="pre">query_class</span></code>.</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>The query interface is considered legacy in SQLAlchemy. Prefer using
+<code class="docutils literal notranslate"><span class="pre">session.execute(select())</span></code> instead.</p>
 </div>
 </dd></dl>
 
+</dd></dl>
+
 <dl class="py function">
-<dt class="sig sig-object py" id="backend.app.set_security_headers">
-<span class="sig-prename descclassname"><span class="pre">backend.app.</span></span><span class="sig-name descname"><span class="pre">set_security_headers</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">response</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/backend/app.html#set_security_headers"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#backend.app.set_security_headers" title="Link to this definition">¶</a></dt>
-<dd><p>Set security headers for each response to protect against script injection and other attacks.</p>
+<dt class="sig sig-object py">
+<span class="sig-prename descclassname"><span class="pre">backend.app.</span></span><span class="sig-name descname"><span class="pre">build_bill_search_entries</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/backend/app.html#build_bill_search_entries"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py">
+<span class="sig-prename descclassname"><span class="pre">backend.app.</span></span><span class="sig-name descname"><span class="pre">default_demographics</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/backend/app.html#default_demographics"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py">
+<span class="sig-prename descclassname"><span class="pre">backend.app.</span></span><span class="sig-name descname"><span class="pre">get_bill_demographics</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bill_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/backend/app.html#get_bill_demographics"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
+<dd><p>Endpoint to retrieve demographic information for votes on a given bill.
+Returns the demographics data from the Vote record associated with the bill,
+or the default demographics if no votes have been recorded yet.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py">
+<span class="sig-prename descclassname"><span class="pre">backend.app.</span></span><span class="sig-name descname"><span class="pre">get_bills</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/backend/app.html#get_bills"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
+<dd><p>API endpoint to retrieve bills with pagination, sorting, and optional filtering by chamber.</p>
+<dl class="simple">
+<dt>Query Parameters:</dt><dd><p>page (int): The page number (default: 1).
+per_page (int): The number of bills per page (default: 20).
+sort (str): The column to sort by (default: “created_at”).
+sort_dir (int): Sort direction; 1 for ascending, -1 for descending (default: -1).
+chamber (str): The chamber to filter bills by (e.g., “House”, “Senate”, or “all”).</p>
+</dd>
+</dl>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>response</strong> (<em>Response</em>) – The Flask response object.</p>
-</dd>
-<dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>The modified response object with security headers.</p>
-</dd>
-<dt class="field-odd">Return type<span class="colon">:</span></dt>
-<dd class="field-odd"><p>Response</p>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>JSON response containing the serialized list of bills and pagination metadata.</p>
 </dd>
 </dl>
 </dd></dl>
 
+<dl class="py function">
+<dt class="sig sig-object py">
+<span class="sig-prename descclassname"><span class="pre">backend.app.</span></span><span class="sig-name descname"><span class="pre">get_full_bill</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bill_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/backend/app.html#get_full_bill"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
+<dd><p>API endpoint to retrieve full details for a specific bill by its id.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>bill_id</strong> (<em>int</em>) – The unique id of the bill.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>JSON response containing the serialized bill details or a 404 error if not found.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py">
+<span class="sig-prename descclassname"><span class="pre">backend.app.</span></span><span class="sig-name descname"><span class="pre">get_trending_bills</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/backend/app.html#get_trending_bills"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
+<dd><p>API endpoint to retrieve the top 10 trending bills sorted by vote count in descending order.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>JSON response containing a list of serialized trending bills.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py">
+<span class="sig-prename descclassname"><span class="pre">backend.app.</span></span><span class="sig-name descname"><span class="pre">get_users</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/backend/app.html#get_users"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
+<dd><p>API endpoint to retrieve all registered users.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>A JSON list of users, where each user includes the id, email, and username.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py">
+<span class="sig-prename descclassname"><span class="pre">backend.app.</span></span><span class="sig-name descname"><span class="pre">login</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/backend/app.html#login"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
+<dd><p>API endpoint for user login.</p>
+<p>Expects a JSON payload with ‘username_or_email’ and ‘password’.
+Returns an access token and user details if credentials are valid.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py">
+<span class="sig-prename descclassname"><span class="pre">backend.app.</span></span><span class="sig-name descname"><span class="pre">register</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/backend/app.html#register"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
+<dd></dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py">
+<span class="sig-prename descclassname"><span class="pre">backend.app.</span></span><span class="sig-name descname"><span class="pre">scheduled_batch_scrape</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/backend/app.html#scheduled_batch_scrape"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
+<dd><p>Scheduled task function to perform batch scraping of bills.</p>
+<p>This function is designed to be run on a minute-by-minute schedule to
+incrementally scrape new bills. It uses the ScrapeTracking model to maintain
+the current offset and updates the offset after each batch.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py">
+<span class="sig-prename descclassname"><span class="pre">backend.app.</span></span><span class="sig-name descname"><span class="pre">scheduled_update</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/backend/app.html#scheduled_update"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
+<dd><p>Scheduled task function to perform a daily update of bills.</p>
+<p>This function is designed to be run on a daily schedule. It initializes
+the CongressionalScraper and calls the daily_update method, logging the number
+of bills processed.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py">
+<span class="sig-prename descclassname"><span class="pre">backend.app.</span></span><span class="sig-name descname"><span class="pre">search_bills</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/backend/app.html#search_bills"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
+<dd><p>API endpoint to search bills based on a keyword.</p>
+<dl class="simple">
+<dt>Query Parameters:</dt><dd><p>keyword (str): The search keyword to look for in the bill’s title, AI summary, or text preview.</p>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>JSON response containing a list of serialized bills matching the search criteria.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py">
+<span class="sig-prename descclassname"><span class="pre">backend.app.</span></span><span class="sig-name descname"><span class="pre">search_bills_tfidf</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/backend/app.html#search_bills_tfidf"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
+<dd><p>API endpoint to search bills using TF–IDF to rank documents based on relevance.</p>
+<dl class="simple">
+<dt>Query Parameters:</dt><dd><p>keyword (str): The search keyword to look for in the bill’s title, AI summary, and text preview.</p>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>JSON response containing a list of serialized bills matching the search criteria.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py">
+<span class="sig-prename descclassname"><span class="pre">backend.app.</span></span><span class="sig-name descname"><span class="pre">serialize_bill</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bill</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/backend/app.html#serialize_bill"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
+<dd><p>Helper function to serialize a Bill object for JSON responses.</p>
+<p>Converts datetime fields to ISO 8601 strings.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>bill</strong> (<em>Bill</em>) – A Bill model instance.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A dictionary representation of the bill.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>dict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py">
+<span class="sig-prename descclassname"><span class="pre">backend.app.</span></span><span class="sig-name descname"><span class="pre">vote_on_bill</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bill_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/backend/app.html#vote_on_bill"><span class="viewcode-link"><span class="pre">[source]</span></span></a></dt>
+<dd><p>Endpoint to allow a user to vote on a bill.</p>
+<p>It handles three vote statuses:</p>
+<ul class="simple">
+<li><p>“upvote” or “downvote”: Casting or changing a vote.</p></li>
+<li><p>“none”: Removing an existing vote.</p></li>
+</ul>
+<p>It updates the Vote entity’s demographic counters and the User’s <cite>voted_bills</cite> accordingly.</p>
+</dd></dl>
+
 </section>
-<section id="module-backend.test_app">
-<span id="backend-test-app-module"></span><h2>backend.test_app module<a class="headerlink" href="#module-backend.test_app" title="Link to this heading">¶</a></h2>
+<section id="module-backend.bills_test">
+<span id="backend-bills-test-module"></span><h2>backend.bills_test module<a class="headerlink" href="#module-backend.bills_test" title="Link to this heading">¶</a></h2>
 <dl class="py function">
-<dt class="sig sig-object py" id="backend.test_app.client">
-<span class="sig-prename descclassname"><span class="pre">backend.test_app.</span></span><span class="sig-name descname"><span class="pre">client</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/backend/test_app.html#client"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#backend.test_app.client" title="Link to this definition">¶</a></dt>
+<dt class="sig sig-object py" id="backend.bills_test.client">
+<span class="sig-prename descclassname"><span class="pre">backend.bills_test.</span></span><span class="sig-name descname"><span class="pre">client</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/backend/bills_test.html#client"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#backend.bills_test.client" title="Link to this definition">¶</a></dt>
+<dd><p>Configure the Flask application for testing.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="backend.bills_test.create_test_bill_for_vote">
+<span class="sig-prename descclassname"><span class="pre">backend.bills_test.</span></span><span class="sig-name descname"><span class="pre">create_test_bill_for_vote</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/backend/bills_test.html#create_test_bill_for_vote"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#backend.bills_test.create_test_bill_for_vote" title="Link to this definition">¶</a></dt>
+<dd><p>Helper to create a fresh Bill for vote tests.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="backend.bills_test.patch_user_init">
+<span class="sig-prename descclassname"><span class="pre">backend.bills_test.</span></span><span class="sig-name descname"><span class="pre">patch_user_init</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/backend/bills_test.html#patch_user_init"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#backend.bills_test.patch_user_init" title="Link to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="backend.test_app.runner">
-<span class="sig-prename descclassname"><span class="pre">backend.test_app.</span></span><span class="sig-name descname"><span class="pre">runner</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">client</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/backend/test_app.html#runner"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#backend.test_app.runner" title="Link to this definition">¶</a></dt>
-<dd></dd></dl>
+<dt class="sig sig-object py" id="backend.bills_test.populate_db">
+<span class="sig-prename descclassname"><span class="pre">backend.bills_test.</span></span><span class="sig-name descname"><span class="pre">populate_db</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">client</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/backend/bills_test.html#populate_db"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#backend.bills_test.populate_db" title="Link to this definition">¶</a></dt>
+<dd><p>Populate the database with test bill data.</p>
+</dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="backend.test_app.test_get_users">
-<span class="sig-prename descclassname"><span class="pre">backend.test_app.</span></span><span class="sig-name descname"><span class="pre">test_get_users</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">client</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/backend/test_app.html#test_get_users"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#backend.test_app.test_get_users" title="Link to this definition">¶</a></dt>
-<dd></dd></dl>
+<dt class="sig sig-object py" id="backend.bills_test.registered_users">
+<span class="sig-prename descclassname"><span class="pre">backend.bills_test.</span></span><span class="sig-name descname"><span class="pre">registered_users</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">client</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/backend/bills_test.html#registered_users"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#backend.bills_test.registered_users" title="Link to this definition">¶</a></dt>
+<dd><p>Populate the database with test users by calling the registration endpoint.
+Registers four users with distinct demographic attributes.
+Returns a dictionary mapping usernames to their respective access tokens and IDs.</p>
+</dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="backend.test_app.test_init_db_cli">
-<span class="sig-prename descclassname"><span class="pre">backend.test_app.</span></span><span class="sig-name descname"><span class="pre">test_init_db_cli</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">runner</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">client</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/backend/test_app.html#test_init_db_cli"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#backend.test_app.test_init_db_cli" title="Link to this definition">¶</a></dt>
-<dd></dd></dl>
+<dt class="sig sig-object py" id="backend.bills_test.test_bill_demographics">
+<span class="sig-prename descclassname"><span class="pre">backend.bills_test.</span></span><span class="sig-name descname"><span class="pre">test_bill_demographics</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">client</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">registered_users</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/backend/bills_test.html#test_bill_demographics"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#backend.bills_test.test_bill_demographics" title="Link to this definition">¶</a></dt>
+<dd><p>Test the /api/bills/&lt;bill_id&gt;/demographics endpoint.
+This test creates a Vote record with custom demographics and checks that the endpoint returns the expected values.</p>
+</dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="backend.test_app.test_login_invalid_credentials">
-<span class="sig-prename descclassname"><span class="pre">backend.test_app.</span></span><span class="sig-name descname"><span class="pre">test_login_invalid_credentials</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">client</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/backend/test_app.html#test_login_invalid_credentials"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#backend.test_app.test_login_invalid_credentials" title="Link to this definition">¶</a></dt>
-<dd></dd></dl>
+<dt class="sig sig-object py" id="backend.bills_test.test_get_bills_pagination">
+<span class="sig-prename descclassname"><span class="pre">backend.bills_test.</span></span><span class="sig-name descname"><span class="pre">test_get_bills_pagination</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">client</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/backend/bills_test.html#test_get_bills_pagination"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#backend.bills_test.test_get_bills_pagination" title="Link to this definition">¶</a></dt>
+<dd><p>Test the /api/bills endpoint with pagination and filtering by chamber.</p>
+</dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="backend.test_app.test_login_missing_fields">
-<span class="sig-prename descclassname"><span class="pre">backend.test_app.</span></span><span class="sig-name descname"><span class="pre">test_login_missing_fields</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">client</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/backend/test_app.html#test_login_missing_fields"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#backend.test_app.test_login_missing_fields" title="Link to this definition">¶</a></dt>
-<dd></dd></dl>
+<dt class="sig sig-object py" id="backend.bills_test.test_get_full_bill">
+<span class="sig-prename descclassname"><span class="pre">backend.bills_test.</span></span><span class="sig-name descname"><span class="pre">test_get_full_bill</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">client</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/backend/bills_test.html#test_get_full_bill"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#backend.bills_test.test_get_full_bill" title="Link to this definition">¶</a></dt>
+<dd><p>Test that /api/bills/&lt;bill_id&gt;/full returns the full details of a bill,
+and that a non-existent bill ID returns a 404 error.</p>
+</dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="backend.test_app.test_login_success_with_email">
-<span class="sig-prename descclassname"><span class="pre">backend.test_app.</span></span><span class="sig-name descname"><span class="pre">test_login_success_with_email</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">client</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/backend/test_app.html#test_login_success_with_email"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#backend.test_app.test_login_success_with_email" title="Link to this definition">¶</a></dt>
-<dd></dd></dl>
+<dt class="sig sig-object py" id="backend.bills_test.test_get_trending_bills">
+<span class="sig-prename descclassname"><span class="pre">backend.bills_test.</span></span><span class="sig-name descname"><span class="pre">test_get_trending_bills</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">client</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/backend/bills_test.html#test_get_trending_bills"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#backend.bills_test.test_get_trending_bills" title="Link to this definition">¶</a></dt>
+<dd><p>Test that the /api/bills/trending endpoint returns bills sorted by vote_count
+in descending order and limits the results to 10.</p>
+</dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="backend.test_app.test_login_success_with_username">
-<span class="sig-prename descclassname"><span class="pre">backend.test_app.</span></span><span class="sig-name descname"><span class="pre">test_login_success_with_username</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">client</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/backend/test_app.html#test_login_success_with_username"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#backend.test_app.test_login_success_with_username" title="Link to this definition">¶</a></dt>
-<dd></dd></dl>
+<dt class="sig sig-object py" id="backend.bills_test.test_search_bills">
+<span class="sig-prename descclassname"><span class="pre">backend.bills_test.</span></span><span class="sig-name descname"><span class="pre">test_search_bills</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">client</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/backend/bills_test.html#test_search_bills"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#backend.bills_test.test_search_bills" title="Link to this definition">¶</a></dt>
+<dd><p>Test that the /api/search endpoint returns bills matching the provided keyword.</p>
+</dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="backend.test_app.test_register_duplicate">
-<span class="sig-prename descclassname"><span class="pre">backend.test_app.</span></span><span class="sig-name descname"><span class="pre">test_register_duplicate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">client</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/backend/test_app.html#test_register_duplicate"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#backend.test_app.test_register_duplicate" title="Link to this definition">¶</a></dt>
-<dd></dd></dl>
+<dt class="sig sig-object py" id="backend.bills_test.test_search_tfidf">
+<span class="sig-prename descclassname"><span class="pre">backend.bills_test.</span></span><span class="sig-name descname"><span class="pre">test_search_tfidf</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">client</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/backend/bills_test.html#test_search_tfidf"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#backend.bills_test.test_search_tfidf" title="Link to this definition">¶</a></dt>
+<dd><p>Test that the /api/search_tfidf endpoint returns bills matching the provided keyword
+using TF–IDF over full_text, ai_summary, and title.</p>
+</dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="backend.test_app.test_register_missing_fields">
-<span class="sig-prename descclassname"><span class="pre">backend.test_app.</span></span><span class="sig-name descname"><span class="pre">test_register_missing_fields</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">client</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/backend/test_app.html#test_register_missing_fields"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#backend.test_app.test_register_missing_fields" title="Link to this definition">¶</a></dt>
-<dd></dd></dl>
+<dt class="sig sig-object py" id="backend.bills_test.test_serialize_bill">
+<span class="sig-prename descclassname"><span class="pre">backend.bills_test.</span></span><span class="sig-name descname"><span class="pre">test_serialize_bill</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/backend/bills_test.html#test_serialize_bill"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#backend.bills_test.test_serialize_bill" title="Link to this definition">¶</a></dt>
+<dd><p>Verify that serialize_bill returns all expected keys from a Bill instance.</p>
+</dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="backend.test_app.test_register_success">
-<span class="sig-prename descclassname"><span class="pre">backend.test_app.</span></span><span class="sig-name descname"><span class="pre">test_register_success</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">client</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/backend/test_app.html#test_register_success"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#backend.test_app.test_register_success" title="Link to this definition">¶</a></dt>
-<dd></dd></dl>
+<dt class="sig sig-object py" id="backend.bills_test.test_vote_bill_downvote">
+<span class="sig-prename descclassname"><span class="pre">backend.bills_test.</span></span><span class="sig-name descname"><span class="pre">test_vote_bill_downvote</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">client</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">registered_users</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/backend/bills_test.html#test_vote_bill_downvote"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#backend.bills_test.test_vote_bill_downvote" title="Link to this definition">¶</a></dt>
+<dd><p>Test adding a downvote to a bill.</p>
+</dd></dl>
 
 <dl class="py function">
-<dt class="sig sig-object py" id="backend.test_app.test_reset_db_cli">
-<span class="sig-prename descclassname"><span class="pre">backend.test_app.</span></span><span class="sig-name descname"><span class="pre">test_reset_db_cli</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">client</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">runner</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/backend/test_app.html#test_reset_db_cli"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#backend.test_app.test_reset_db_cli" title="Link to this definition">¶</a></dt>
-<dd></dd></dl>
+<dt class="sig sig-object py" id="backend.bills_test.test_vote_bill_invalid_vote_status">
+<span class="sig-prename descclassname"><span class="pre">backend.bills_test.</span></span><span class="sig-name descname"><span class="pre">test_vote_bill_invalid_vote_status</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">client</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">registered_users</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/backend/bills_test.html#test_vote_bill_invalid_vote_status"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#backend.bills_test.test_vote_bill_invalid_vote_status" title="Link to this definition">¶</a></dt>
+<dd><p>Test that an invalid vote_status returns a 400 error.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="backend.bills_test.test_vote_bill_no_change">
+<span class="sig-prename descclassname"><span class="pre">backend.bills_test.</span></span><span class="sig-name descname"><span class="pre">test_vote_bill_no_change</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">client</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">registered_users</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/backend/bills_test.html#test_vote_bill_no_change"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#backend.bills_test.test_vote_bill_no_change" title="Link to this definition">¶</a></dt>
+<dd><p>Test that re-sending the same vote does not alter vote_count.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="backend.bills_test.test_vote_bill_not_found">
+<span class="sig-prename descclassname"><span class="pre">backend.bills_test.</span></span><span class="sig-name descname"><span class="pre">test_vote_bill_not_found</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">client</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">registered_users</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/backend/bills_test.html#test_vote_bill_not_found"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#backend.bills_test.test_vote_bill_not_found" title="Link to this definition">¶</a></dt>
+<dd><p>Test that voting on a non-existent bill returns a 404 error.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="backend.bills_test.test_vote_bill_remove_existing">
+<span class="sig-prename descclassname"><span class="pre">backend.bills_test.</span></span><span class="sig-name descname"><span class="pre">test_vote_bill_remove_existing</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">client</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">registered_users</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/backend/bills_test.html#test_vote_bill_remove_existing"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#backend.bills_test.test_vote_bill_remove_existing" title="Link to this definition">¶</a></dt>
+<dd><p>Test that removing an existing vote decreases the vote_count.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="backend.bills_test.test_vote_bill_remove_nonexistent">
+<span class="sig-prename descclassname"><span class="pre">backend.bills_test.</span></span><span class="sig-name descname"><span class="pre">test_vote_bill_remove_nonexistent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">client</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">registered_users</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/backend/bills_test.html#test_vote_bill_remove_nonexistent"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#backend.bills_test.test_vote_bill_remove_nonexistent" title="Link to this definition">¶</a></dt>
+<dd><p>Test that attempting to remove a non-existent vote returns an appropriate error.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="backend.bills_test.test_vote_bill_update">
+<span class="sig-prename descclassname"><span class="pre">backend.bills_test.</span></span><span class="sig-name descname"><span class="pre">test_vote_bill_update</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">client</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">registered_users</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/backend/bills_test.html#test_vote_bill_update"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#backend.bills_test.test_vote_bill_update" title="Link to this definition">¶</a></dt>
+<dd><p>Test updating an existing vote (from upvote to downvote) without changing vote_count.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="backend.bills_test.test_vote_bill_upvote">
+<span class="sig-prename descclassname"><span class="pre">backend.bills_test.</span></span><span class="sig-name descname"><span class="pre">test_vote_bill_upvote</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">client</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">registered_users</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/backend/bills_test.html#test_vote_bill_upvote"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#backend.bills_test.test_vote_bill_upvote" title="Link to this definition">¶</a></dt>
+<dd><p>Test adding an upvote to a bill with no prior vote from the user.</p>
+</dd></dl>
+
+</section>
+<section id="module-backend.user_test">
+<span id="backend-user-test-module"></span><h2>backend.user_test module<a class="headerlink" href="#module-backend.user_test" title="Link to this heading">¶</a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="backend.user_test.client">
+<span class="sig-prename descclassname"><span class="pre">backend.user_test.</span></span><span class="sig-name descname"><span class="pre">client</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/backend/user_test.html#client"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#backend.user_test.client" title="Link to this definition">¶</a></dt>
+<dd><p>Configures the Flask application for testing using an in-memory SQLite database.
+The database tables are dropped and created before yielding the test client and cleaned up afterward.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="backend.user_test.test_get_users">
+<span class="sig-prename descclassname"><span class="pre">backend.user_test.</span></span><span class="sig-name descname"><span class="pre">test_get_users</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">client</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/backend/user_test.html#test_get_users"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#backend.user_test.test_get_users" title="Link to this definition">¶</a></dt>
+<dd><p>Test retrieval of registered users.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="backend.user_test.test_login_invalid_credentials">
+<span class="sig-prename descclassname"><span class="pre">backend.user_test.</span></span><span class="sig-name descname"><span class="pre">test_login_invalid_credentials</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">client</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/backend/user_test.html#test_login_invalid_credentials"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#backend.user_test.test_login_invalid_credentials" title="Link to this definition">¶</a></dt>
+<dd><p>Test login attempt with invalid credentials.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="backend.user_test.test_login_missing_fields">
+<span class="sig-prename descclassname"><span class="pre">backend.user_test.</span></span><span class="sig-name descname"><span class="pre">test_login_missing_fields</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">client</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/backend/user_test.html#test_login_missing_fields"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#backend.user_test.test_login_missing_fields" title="Link to this definition">¶</a></dt>
+<dd><p>Test login attempt with missing required fields.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="backend.user_test.test_login_success_with_email">
+<span class="sig-prename descclassname"><span class="pre">backend.user_test.</span></span><span class="sig-name descname"><span class="pre">test_login_success_with_email</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">client</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/backend/user_test.html#test_login_success_with_email"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#backend.user_test.test_login_success_with_email" title="Link to this definition">¶</a></dt>
+<dd><p>Test successful login using the user’s email.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="backend.user_test.test_login_success_with_username">
+<span class="sig-prename descclassname"><span class="pre">backend.user_test.</span></span><span class="sig-name descname"><span class="pre">test_login_success_with_username</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">client</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/backend/user_test.html#test_login_success_with_username"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#backend.user_test.test_login_success_with_username" title="Link to this definition">¶</a></dt>
+<dd><p>Test successful login using the user’s username.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="backend.user_test.test_register_duplicate">
+<span class="sig-prename descclassname"><span class="pre">backend.user_test.</span></span><span class="sig-name descname"><span class="pre">test_register_duplicate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">client</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/backend/user_test.html#test_register_duplicate"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#backend.user_test.test_register_duplicate" title="Link to this definition">¶</a></dt>
+<dd><p>Test registration with duplicate user data.
+First registration should succeed and duplicate should fail.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="backend.user_test.test_register_invalid_age">
+<span class="sig-prename descclassname"><span class="pre">backend.user_test.</span></span><span class="sig-name descname"><span class="pre">test_register_invalid_age</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">client</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/backend/user_test.html#test_register_invalid_age"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#backend.user_test.test_register_invalid_age" title="Link to this definition">¶</a></dt>
+<dd><p>Test registration with an invalid age (too low).
+Valid age must be greater than 1 and less than 100.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="backend.user_test.test_register_invalid_ethnicity">
+<span class="sig-prename descclassname"><span class="pre">backend.user_test.</span></span><span class="sig-name descname"><span class="pre">test_register_invalid_ethnicity</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">client</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/backend/user_test.html#test_register_invalid_ethnicity"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#backend.user_test.test_register_invalid_ethnicity" title="Link to this definition">¶</a></dt>
+<dd><p>Test registration with an invalid ethnicity.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="backend.user_test.test_register_invalid_gender">
+<span class="sig-prename descclassname"><span class="pre">backend.user_test.</span></span><span class="sig-name descname"><span class="pre">test_register_invalid_gender</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">client</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/backend/user_test.html#test_register_invalid_gender"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#backend.user_test.test_register_invalid_gender" title="Link to this definition">¶</a></dt>
+<dd><p>Test registration with an invalid gender.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="backend.user_test.test_register_invalid_political_affiliation">
+<span class="sig-prename descclassname"><span class="pre">backend.user_test.</span></span><span class="sig-name descname"><span class="pre">test_register_invalid_political_affiliation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">client</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/backend/user_test.html#test_register_invalid_political_affiliation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#backend.user_test.test_register_invalid_political_affiliation" title="Link to this definition">¶</a></dt>
+<dd><p>Test registration with an invalid political affiliation.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="backend.user_test.test_register_invalid_state">
+<span class="sig-prename descclassname"><span class="pre">backend.user_test.</span></span><span class="sig-name descname"><span class="pre">test_register_invalid_state</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">client</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/backend/user_test.html#test_register_invalid_state"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#backend.user_test.test_register_invalid_state" title="Link to this definition">¶</a></dt>
+<dd><p>Test registration with an invalid state.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="backend.user_test.test_register_missing_fields">
+<span class="sig-prename descclassname"><span class="pre">backend.user_test.</span></span><span class="sig-name descname"><span class="pre">test_register_missing_fields</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">client</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/backend/user_test.html#test_register_missing_fields"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#backend.user_test.test_register_missing_fields" title="Link to this definition">¶</a></dt>
+<dd><p>Test registration with missing required fields.
+Since the endpoint first attempts to convert the ‘age’ field, omitting it returns “Invalid age format”.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="backend.user_test.test_register_state_conversion">
+<span class="sig-prename descclassname"><span class="pre">backend.user_test.</span></span><span class="sig-name descname"><span class="pre">test_register_state_conversion</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">client</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/backend/user_test.html#test_register_state_conversion"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#backend.user_test.test_register_state_conversion" title="Link to this definition">¶</a></dt>
+<dd><p>Test that a user registering with a full state name has their state
+converted to the correct abbreviation in the database.</p>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="backend.user_test.test_register_success">
+<span class="sig-prename descclassname"><span class="pre">backend.user_test.</span></span><span class="sig-name descname"><span class="pre">test_register_success</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">client</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/backend/user_test.html#test_register_success"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#backend.user_test.test_register_success" title="Link to this definition">¶</a></dt>
+<dd><p>Test that a user is successfully registered with all required fields.</p>
+</dd></dl>
 
 </section>
 <section id="module-backend">
@@ -410,10 +1277,10 @@ Method: POST</p>
       <div class="clearer"></div>
     </div>
     <div class="footer">
-      &#169;2025, Alexander Edwards.
+      &#169;2025, Alexander Edwards, Jacob Ryan, Tyler Cho, Akash Banerjee, Raphael Luis Santos,Armeen Seyed Makki.
       
       |
-      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 8.2.0</a>
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 8.2.3</a>
       &amp; <a href="https://alabaster.readthedocs.io">Alabaster 1.0.0</a>
       
       |
